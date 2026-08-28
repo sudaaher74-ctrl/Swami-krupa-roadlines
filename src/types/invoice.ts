@@ -35,6 +35,7 @@ export interface InvoiceData {
   id: string;
   title: string; // e.g. "TAX INVOICE"
   clientName: string; // e.g. "ADNISHA TRANSPORT"
+  clientPhone?: string; // e.g. "+91 9876543210"
   billNo: string; // e.g. "122/ 2026-27"
   date: string; // e.g. "22-08-2026"
   beNo: string; // e.g. "3188241"
@@ -47,4 +48,20 @@ export interface InvoiceData {
   customGstPayableBy?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface CustomerRecord {
+  id: string;
+  name: string;
+  phone?: string;
+  gstin?: string;
+  address?: string;
+}
+
+export interface VehicleRecord {
+  id: string;
+  vehicleNo: string;
+  driverName?: string;
+  driverPhone?: string;
+  type?: string;
 }

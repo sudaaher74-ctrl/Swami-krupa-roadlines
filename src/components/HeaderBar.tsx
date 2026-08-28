@@ -9,14 +9,20 @@ import {
   RotateCcw,
   Sparkles,
   Layout,
-  Maximize2
+  Maximize2,
+  Download,
+  Share2,
+  Users
 } from 'lucide-react';
 
 interface HeaderBarProps {
   onNewInvoice: () => void;
   onSaveInvoice: () => void;
   onPrint: () => void;
+  onDownloadPDF: () => void;
+  onWhatsAppShare: () => void;
   onOpenSavedModal: () => void;
+  onOpenDirectoryModal: () => void;
   savedCount: number;
   zoom: number;
   onZoomIn: () => void;
@@ -25,13 +31,17 @@ interface HeaderBarProps {
   onLoadOriginalSample: () => void;
   viewMode: 'split' | 'preview' | 'editor';
   onViewModeChange: (mode: 'split' | 'preview' | 'editor') => void;
+  isDownloadingPDF?: boolean;
 }
 
 export const HeaderBar: React.FC<HeaderBarProps> = ({
   onNewInvoice,
   onSaveInvoice,
   onPrint,
+  onDownloadPDF,
+  onWhatsAppShare,
   onOpenSavedModal,
+  onOpenDirectoryModal,
   savedCount,
   zoom,
   onZoomIn,
@@ -40,6 +50,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   onLoadOriginalSample,
   viewMode,
   onViewModeChange,
+  isDownloadingPDF = false,
 }) => {
   return (
     <header className="app-header no-print">
@@ -102,10 +113,10 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
         <button
           type="button"
           className="btn-header-secondary"
-          onClick={onNewInvoice}
-          title="Start fresh new bill"
+          onClick={onOpenDirectoryModal}
+          title="Manage Parties & Vehicles Directory"
         >
-          <PlusCircle size={15} /> New Bill
+          <Users size={15} /> Directory
         </button>
 
         <button
@@ -119,11 +130,39 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
 
         <button
           type="button"
+          className="btn-header-secondary"
+          onClick={onNewInvoice}
+          title="Start fresh new bill"
+        >
+          <PlusCircle size={15} /> New Bill
+        </button>
+
+        <button
+          type="button"
+          className="btn-header-whatsapp"
+          onClick={onWhatsAppShare}
+          title="Share bill breakdown on WhatsApp"
+        >
+          <Share2 size={15} /> WhatsApp
+        </button>
+
+        <button
+          type="button"
+          className="btn-header-pdf"
+          onClick={onDownloadPDF}
+          disabled={isDownloadingPDF}
+          title="Download high-resolution PDF file"
+        >
+          <Download size={15} /> {isDownloadingPDF ? 'Generating...' : 'Download PDF'}
+        </button>
+
+        <button
+          type="button"
           className="btn-header-save"
           onClick={onSaveInvoice}
           title="Save bill locally"
         >
-          <Save size={15} /> Save Bill
+          <Save size={15} /> Save
         </button>
 
         <button
@@ -132,7 +171,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
           onClick={onPrint}
           title="Print or Save as PDF"
         >
-          <Printer size={16} /> Print / PDF
+          <Printer size={16} /> Print
         </button>
       </div>
     </header>

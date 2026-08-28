@@ -1,18 +1,42 @@
 import React, { useState } from 'react';
-import type { InvoiceData, LineItem } from '../types/invoice';
-import { Plus, Trash2, Copy, Building2, User, FileSpreadsheet, Landmark, Sparkles, RefreshCw } from 'lucide-react';
+import type { InvoiceData, LineItem, CustomerRecord, VehicleRecord } from '../types/invoice';
+import {
+  Plus,
+  Trash2,
+  Copy,
+  Building2,
+  User,
+  FileSpreadsheet,
+  Landmark,
+  Sparkles,
+  RefreshCw,
+  Phone,
+  BookmarkPlus,
+  Share2
+} from 'lucide-react';
 import { numberToIndianWords } from '../utils/numberToWords';
+import { openWhatsAppShare } from '../utils/exportUtils';
 
 interface InvoiceEditorProps {
   invoice: InvoiceData;
   onChange: (updated: InvoiceData) => void;
   onSaveAsDefaultProfile?: () => void;
+  customers?: CustomerRecord[];
+  vehicles?: VehicleRecord[];
+  onQuickSaveCustomer?: (name: string, phone?: string) => void;
+  onQuickSaveVehicle?: (vehicleNo: string) => void;
+  onOpenDirectoryModal?: () => void;
 }
 
 export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
   invoice,
   onChange,
   onSaveAsDefaultProfile,
+  customers = [],
+  vehicles = [],
+  onQuickSaveCustomer,
+  onQuickSaveVehicle,
+  onOpenDirectoryModal,
 }) => {
   const [activeTab, setActiveTab] = useState<'bill' | 'items' | 'company' | 'bank'>('items');
 
@@ -106,7 +130,6 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
 
   const removeItemRow = (index: number) => {
     if (invoice.items.length <= 1) {
-      // Clear single row instead of 0 rows
       onChange({
         ...invoice,
         items: [
@@ -131,6 +154,16 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
       items: updated,
       updatedAt: new Date().toISOString(),
     });
+  };
+
+  const handleSelectCustomer = (partyName: string) => {
+    const found = customers.find((c) => c.name.toUpperCase() === partyName.toUpperCase());
+    const copy = { ...invoice, clientName: partyName.toUpperCase() };
+    if (found && found.phone) {
+      copy.clientPhone = found.phone;
+    }
+    copy.updatedAt = new Date().toISOString();
+    onChange(copy);
   };
 
   const billTotal = invoice.items.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
@@ -205,6 +238,15 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
             </div>
           </div>
 
+          {/* Vehicle Autocomplete Datalist */}
+          <datalist id="vehicles-master-list">
+            {vehicles.map((v) => (
+              <option key={v.id} value={v.vehicleNo}>
+                {v.driverName ? `${v.vehicleNo} (${v.driverName})` : v.vehicleNo}
+              </option>
+            ))}
+          </datalist>
+
           {/* Line Items List */}
           <div className="items-editor-list">
             {invoice.items.map((item, idx) => (
@@ -212,6 +254,16 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
                 <div className="item-card-header">
                   <span className="item-badge">Row #{idx + 1}</span>
                   <div className="item-card-controls">
+                    {item.vehicleNo && onQuickSaveVehicle && (
+                      <button
+                        type="button"
+                        title="Save this Vehicle to Directory"
+                        className="btn-icon"
+                        onClick={() => onQuickSaveVehicle(item.vehicleNo)}
+                      >
+                        <BookmarkPlus size={14} className="text-primary" />
+                      </button>
+                    )}
                     <button
                       type="button"
                       title="Duplicate row"
@@ -256,6 +308,7 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
                     <label>Vehicle No.</label>
                     <input
                       type="text"
+                      list="vehicles-master-list"
                       value={item.vehicleNo}
                       placeholder="MH46DL7778"
                       style={{ textTransform: 'uppercase' }}
@@ -333,7 +386,7 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
             ))}
           </div>
 
-          {/* Quick Summary Strip */}
+          {/* Quick Summary Strip & WhatsApp Share */}
           <div className="editor-summary-strip">
             <div className="summary-col">
               <span className="lbl">Bill Total</span>
@@ -347,6 +400,16 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
               <span className="lbl">Net Balance</span>
               <span className="val">₹ {balanceTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
             </div>
+            <div className="summary-col">
+              <button
+                type="button"
+                className="btn-whatsapp-sm"
+                onClick={() => openWhatsAppShare(invoice)}
+                title="Send bill on WhatsApp"
+              >
+                <Share2 size={13} /> WhatsApp
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -359,18 +422,58 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
               <h3 className="pane-title">Invoice & Customer Details</h3>
               <p className="pane-subtitle">Set bill number, date, consignee, and advance deductions.</p>
             </div>
+            {onOpenDirectoryModal && (
+              <button type="button" className="btn-secondary-sm" onClick={onOpenDirectoryModal}>
+                <User size={14} /> Open Directory
+              </button>
+            )}
           </div>
 
+          {/* Customer Datalist */}
+          <datalist id="customers-master-list">
+            {customers.map((c) => (
+              <option key={c.id} value={c.name}>
+                {c.phone ? `${c.name} (${c.phone})` : c.name}
+              </option>
+            ))}
+          </datalist>
+
           <div className="form-section-grid">
-            <div className="input-group col-span-12">
-              <label>M/S Consignee / Transport Party Name</label>
+            <div className="input-group col-span-8">
+              <div className="flex-between">
+                <label>M/S Consignee / Transport Party Name</label>
+                {invoice.clientName && onQuickSaveCustomer && (
+                  <button
+                    type="button"
+                    className="btn-link-xs"
+                    onClick={() => onQuickSaveCustomer(invoice.clientName, invoice.clientPhone)}
+                  >
+                    <BookmarkPlus size={12} /> Save to Directory
+                  </button>
+                )}
+              </div>
               <input
                 type="text"
+                list="customers-master-list"
                 value={invoice.clientName}
                 placeholder="ADNISHA TRANSPORT"
                 style={{ textTransform: 'uppercase', fontWeight: 600 }}
-                onChange={(e) => updateInvoice('clientName', e.target.value.toUpperCase())}
+                onChange={(e) => handleSelectCustomer(e.target.value)}
               />
+            </div>
+
+            <div className="input-group col-span-4">
+              <label>WhatsApp / Phone No</label>
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <Phone size={14} style={{ position: 'absolute', left: '8px', color: '#94a3b8' }} />
+                <input
+                  type="text"
+                  placeholder="e.g. 9876543210"
+                  value={invoice.clientPhone || ''}
+                  style={{ paddingLeft: '28px' }}
+                  onChange={(e) => updateInvoice('clientPhone', e.target.value)}
+                />
+              </div>
             </div>
 
             <div className="input-group col-span-6">
