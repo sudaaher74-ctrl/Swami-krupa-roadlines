@@ -54,124 +54,131 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
 }) => {
   return (
     <header className="app-header no-print">
+      {/* Brand & Studio Title */}
       <div className="header-left">
         <div className="brand-logo-badge">
-          <span className="brand-dot"></span>
-          <span className="brand-title">ROADLINES BILL GENERATOR</span>
-          <span className="brand-tag">PRO</span>
+          <div className="brand-dot-pulse">
+            <div className="pulse"></div>
+            <div className="core"></div>
+          </div>
+          <div className="brand-text-group">
+            <span className="brand-title">SWAMI KRUPA ROADLINES</span>
+            <span className="brand-subtitle">TAX INVOICE GENERATOR</span>
+          </div>
+          <span className="brand-pro-tag">PRO</span>
         </div>
       </div>
 
-      {/* Center View Controls & Zoom */}
+      {/* Center View Controls & Zoom Widget */}
       <div className="header-center">
-        <div className="view-mode-selector">
+        <div className="segmented-pill-selector">
           <button
             type="button"
-            className={`view-btn ${viewMode === 'split' ? 'active' : ''}`}
+            className={`pill-btn ${viewMode === 'split' ? 'active' : ''}`}
             onClick={() => onViewModeChange('split')}
-            title="Split Editor & Preview"
+            title="Split Editor & Preview View"
           >
             <Layout size={14} /> Split View
           </button>
           <button
             type="button"
-            className={`view-btn ${viewMode === 'preview' ? 'active' : ''}`}
+            className={`pill-btn ${viewMode === 'preview' ? 'active' : ''}`}
             onClick={() => onViewModeChange('preview')}
-            title="Print Preview Only"
+            title="Full A4 Preview Mode"
           >
-            <Maximize2 size={14} /> Preview
+            <Maximize2 size={14} /> Preview Only
           </button>
         </div>
 
-        <div className="zoom-controls">
-          <button type="button" className="btn-zoom" onClick={onZoomOut} title="Zoom Out">
-            <ZoomOut size={14} />
+        <div className="zoom-widget">
+          <button type="button" className="zoom-btn" onClick={onZoomOut} title="Zoom Out">
+            <ZoomOut size={13} />
           </button>
-          <span className="zoom-level" onClick={onZoomReset} title="Click to reset zoom">
+          <span className="zoom-value" onClick={onZoomReset} title="Click to Reset 100%">
             {Math.round(zoom * 100)}%
           </span>
-          <button type="button" className="btn-zoom" onClick={onZoomIn} title="Zoom In">
-            <ZoomIn size={14} />
+          <button type="button" className="zoom-btn" onClick={onZoomIn} title="Zoom In">
+            <ZoomIn size={13} />
           </button>
-          <button type="button" className="btn-zoom" onClick={onZoomReset} title="Reset 100%">
-            <RotateCcw size={13} />
+          <button type="button" className="zoom-btn" onClick={onZoomReset} title="Reset to Fit">
+            <RotateCcw size={12} />
           </button>
         </div>
       </div>
 
-      {/* Right Action Buttons */}
+      {/* Right Actions Bar */}
       <div className="header-right">
         <button
           type="button"
-          className="btn-sample-loader"
+          className="btn-header btn-header-sample"
           onClick={onLoadOriginalSample}
-          title="Load the exact original Swami Krupa Roadlines bill sample"
+          title="Restore original Swami Krupa Roadlines template"
         >
-          <Sparkles size={14} className="text-amber" /> Load Sample Bill
+          <Sparkles size={14} /> Demo Sample
         </button>
 
         <button
           type="button"
-          className="btn-header-secondary"
+          className="btn-header btn-header-ghost"
           onClick={onOpenDirectoryModal}
-          title="Manage Parties & Vehicles Directory"
+          title="Customer & Vehicle Directory"
         >
-          <Users size={15} /> Directory
+          <Users size={14} /> Directory
         </button>
 
         <button
           type="button"
-          className="btn-header-secondary"
+          className="btn-header btn-header-ghost"
           onClick={onOpenSavedModal}
-          title="View all saved bills"
+          title="Saved Bills History"
         >
-          <FolderOpen size={15} /> Bills ({savedCount})
+          <FolderOpen size={14} /> Bills ({savedCount})
         </button>
 
         <button
           type="button"
-          className="btn-header-secondary"
+          className="btn-header btn-header-ghost"
           onClick={onNewInvoice}
-          title="Start fresh new bill"
+          title="Create New Bill"
         >
-          <PlusCircle size={15} /> New Bill
+          <PlusCircle size={14} /> New Bill
         </button>
 
         <button
           type="button"
-          className="btn-header-whatsapp"
+          className="btn-header btn-header-whatsapp"
           onClick={onWhatsAppShare}
-          title="Share bill breakdown on WhatsApp"
+          title="Share Bill Breakdown on WhatsApp"
         >
-          <Share2 size={15} /> WhatsApp
+          <Share2 size={14} /> WhatsApp
         </button>
 
         <button
           type="button"
-          className="btn-header-pdf"
+          className="btn-header btn-header-pdf"
           onClick={onDownloadPDF}
           disabled={isDownloadingPDF}
-          title="Download high-resolution PDF file"
+          title="Export High-Res A4 PDF"
         >
-          <Download size={15} /> {isDownloadingPDF ? 'Generating...' : 'Download PDF'}
+          <Download size={14} /> {isDownloadingPDF ? 'Generating...' : 'PDF'}
         </button>
 
         <button
           type="button"
-          className="btn-header-save"
+          className="btn-header btn-header-save"
           onClick={onSaveInvoice}
-          title="Save bill locally"
+          title="Save Bill to Local Storage"
         >
-          <Save size={15} /> Save
+          <Save size={14} /> Save
         </button>
 
         <button
           type="button"
-          className="btn-header-primary"
+          className="btn-header btn-header-print"
           onClick={onPrint}
-          title="Print or Save as PDF"
+          title="Print or Save via System Dialog"
         >
-          <Printer size={16} /> Print
+          <Printer size={15} /> Print
         </button>
       </div>
     </header>

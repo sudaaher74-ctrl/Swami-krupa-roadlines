@@ -14,7 +14,7 @@ import {
   BookmarkPlus,
   Share2
 } from 'lucide-react';
-import { numberToIndianWords } from '../utils/numberToWords';
+import { numberToIndianWords, formatCurrency } from '../utils/numberToWords';
 import { openWhatsAppShare } from '../utils/exportUtils';
 
 interface InvoiceEditorProps {
@@ -38,7 +38,7 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
   onQuickSaveVehicle,
   onOpenDirectoryModal,
 }) => {
-  const [activeTab, setActiveTab] = useState<'bill' | 'items' | 'company' | 'bank'>('items');
+  const [activeTab, setActiveTab] = useState<'items' | 'bill' | 'company' | 'bank'>('items');
 
   // Quick preset particulars common in transport billing
   const quickParticulars = [
@@ -167,69 +167,69 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
   };
 
   const billTotal = invoice.items.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
-  const balanceTotal = billTotal - (Number(invoice.advanceDeduction) || 0);
+  const advanceAmount = Number(invoice.advanceDeduction) || 0;
+  const balanceTotal = billTotal - advanceAmount;
 
   return (
     <div className="editor-container">
-      {/* Editor Tab Navigation */}
-      <div className="editor-tabs">
+      {/* Tab Navigation */}
+      <div className="editor-tabs-bar">
         <button
-          className={`editor-tab-btn ${activeTab === 'items' ? 'active' : ''}`}
+          className={`editor-tab-item ${activeTab === 'items' ? 'active' : ''}`}
           onClick={() => setActiveTab('items')}
         >
-          <FileSpreadsheet size={16} />
-          <span>Particulars ({invoice.items.length})</span>
+          <FileSpreadsheet size={15} />
+          <span>Particulars</span>
+          <span className="tab-counter-badge">{invoice.items.length}</span>
         </button>
 
         <button
-          className={`editor-tab-btn ${activeTab === 'bill' ? 'active' : ''}`}
+          className={`editor-tab-item ${activeTab === 'bill' ? 'active' : ''}`}
           onClick={() => setActiveTab('bill')}
         >
-          <User size={16} />
-          <span>Bill & Party Info</span>
+          <User size={15} />
+          <span>Party & Bill</span>
         </button>
 
         <button
-          className={`editor-tab-btn ${activeTab === 'company' ? 'active' : ''}`}
+          className={`editor-tab-item ${activeTab === 'company' ? 'active' : ''}`}
           onClick={() => setActiveTab('company')}
         >
-          <Building2 size={16} />
-          <span>Company Header</span>
+          <Building2 size={15} />
+          <span>Header</span>
         </button>
 
         <button
-          className={`editor-tab-btn ${activeTab === 'bank' ? 'active' : ''}`}
+          className={`editor-tab-item ${activeTab === 'bank' ? 'active' : ''}`}
           onClick={() => setActiveTab('bank')}
         >
-          <Landmark size={16} />
+          <Landmark size={15} />
           <span>Bank & Terms</span>
         </button>
       </div>
 
       {/* TAB CONTENT: ITEMS & PARTICULARS */}
       {activeTab === 'items' && (
-        <div className="tab-pane">
-          <div className="pane-header">
+        <div className="tab-pane-content">
+          <div className="tab-pane-header">
             <div>
-              <h3 className="pane-title">Particulars & Trip Items</h3>
-              <p className="pane-subtitle">Enter container, vehicle, destination, and billing amounts.</p>
+              <h3 className="tab-heading">Trip Items & Charges</h3>
+              <p className="tab-subheading">Enter vehicles, container numbers, destinations, and freight rates.</p>
             </div>
-            <div className="pane-actions">
-              <button className="btn-primary-sm" onClick={() => addItemRow()}>
-                <Plus size={15} /> Add Line Row
-              </button>
-            </div>
+            <button className="btn-header btn-header-print" onClick={() => addItemRow()}>
+              <Plus size={14} /> Add Row
+            </button>
           </div>
 
-          {/* Quick Preset Badges */}
-          <div className="quick-presets-box">
-            <span className="preset-label"><Sparkles size={13} /> Quick Add:</span>
-            <div className="preset-chips">
+          {/* Quick Add Chips */}
+          <div className="quick-add-box">
+            <span className="quick-add-label"><Sparkles size={13} className="text-amber" /> 1-Click Common Charges</span>
+            <div className="chips-cloud">
               {quickParticulars.map((qp, idx) => (
                 <button
                   key={idx}
                   type="button"
-                  className="preset-chip"
+                  className="action-chip"
                   onClick={() => addItemRow(qp)}
                 >
                   + {qp}
@@ -247,44 +247,44 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
             ))}
           </datalist>
 
-          {/* Line Items List */}
-          <div className="items-editor-list">
+          {/* Items List */}
+          <div className="items-list-wrapper">
             {invoice.items.map((item, idx) => (
-              <div key={item.id || idx} className="item-card">
-                <div className="item-card-header">
-                  <span className="item-badge">Row #{idx + 1}</span>
-                  <div className="item-card-controls">
+              <div key={item.id || idx} className="item-editor-card">
+                <div className="item-editor-card-header">
+                  <span className="item-row-badge">Item #{idx + 1} {item.particulars ? `• ${item.particulars}` : ''}</span>
+                  <div className="item-card-toolbar">
                     {item.vehicleNo && onQuickSaveVehicle && (
                       <button
                         type="button"
-                        title="Save this Vehicle to Directory"
+                        title="Save Vehicle to Directory"
                         className="btn-icon"
                         onClick={() => onQuickSaveVehicle(item.vehicleNo)}
                       >
-                        <BookmarkPlus size={14} className="text-primary" />
+                        <BookmarkPlus size={13} className="text-primary" />
                       </button>
                     )}
                     <button
                       type="button"
-                      title="Duplicate row"
+                      title="Duplicate Row"
                       className="btn-icon"
                       onClick={() => duplicateItemRow(idx)}
                     >
-                      <Copy size={14} />
+                      <Copy size={13} />
                     </button>
                     <button
                       type="button"
-                      title="Remove row"
+                      title="Remove Row"
                       className="btn-icon text-danger"
                       onClick={() => removeItemRow(idx)}
                     >
-                      <Trash2 size={14} />
+                      <Trash2 size={13} />
                     </button>
                   </div>
                 </div>
 
-                <div className="item-grid-form">
-                  <div className="input-group col-span-2">
+                <div className="form-grid-layout">
+                  <div className="form-group col-2">
                     <label>S.N.</label>
                     <input
                       type="text"
@@ -294,7 +294,7 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
                     />
                   </div>
 
-                  <div className="input-group col-span-3">
+                  <div className="form-group col-3">
                     <label>Date</label>
                     <input
                       type="text"
@@ -304,19 +304,19 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
                     />
                   </div>
 
-                  <div className="input-group col-span-4">
+                  <div className="form-group col-4">
                     <label>Vehicle No.</label>
                     <input
                       type="text"
                       list="vehicles-master-list"
                       value={item.vehicleNo}
                       placeholder="MH46DL7778"
-                      style={{ textTransform: 'uppercase' }}
+                      style={{ textTransform: 'uppercase', fontFamily: 'monospace', fontWeight: 600 }}
                       onChange={(e) => handleItemChange(idx, 'vehicleNo', e.target.value.toUpperCase())}
                     />
                   </div>
 
-                  <div className="input-group col-span-3">
+                  <div className="form-group col-3">
                     <label>Weight</label>
                     <input
                       type="text"
@@ -332,29 +332,29 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
                     </datalist>
                   </div>
 
-                  <div className="input-group col-span-6">
+                  <div className="form-group col-6">
                     <label>Container No (e.g. BEAU5560140 1X40)</label>
                     <textarea
                       rows={2}
                       value={item.containerNo}
                       placeholder="BEAU5560140&#10;1X40"
-                      style={{ textTransform: 'uppercase', resize: 'vertical' }}
+                      style={{ textTransform: 'uppercase' }}
                       onChange={(e) => handleItemChange(idx, 'containerNo', e.target.value.toUpperCase())}
                     />
                   </div>
 
-                  <div className="input-group col-span-6">
+                  <div className="form-group col-6">
                     <label>P A R T I C U L A R S</label>
                     <textarea
                       rows={2}
                       value={item.particulars}
                       placeholder="CONTINENTAL TO VASAI"
-                      style={{ textTransform: 'uppercase', resize: 'vertical' }}
+                      style={{ textTransform: 'uppercase' }}
                       onChange={(e) => handleItemChange(idx, 'particulars', e.target.value.toUpperCase())}
                     />
                   </div>
 
-                  <div className="input-group col-span-6">
+                  <div className="form-group col-6">
                     <label>Advance (Optional)</label>
                     <input
                       type="text"
@@ -364,14 +364,14 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
                     />
                   </div>
 
-                  <div className="input-group col-span-6">
-                    <label className="text-highlight">Amount (₹)</label>
+                  <div className="form-group col-6">
+                    <label style={{ color: '#34d399', fontWeight: 700 }}>Amount (₹)</label>
                     <input
                       type="number"
                       step="any"
                       value={item.amount}
                       placeholder="19000.00"
-                      className="input-highlight"
+                      className="amount-input-highlight"
                       onChange={(e) =>
                         handleItemChange(
                           idx,
@@ -385,51 +385,24 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
               </div>
             ))}
           </div>
-
-          {/* Quick Summary Strip & WhatsApp Share */}
-          <div className="editor-summary-strip">
-            <div className="summary-col">
-              <span className="lbl">Bill Total</span>
-              <span className="val">₹ {billTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-            </div>
-            <div className="summary-col">
-              <span className="lbl">Advance Less</span>
-              <span className="val">₹ {(Number(invoice.advanceDeduction) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-            </div>
-            <div className="summary-col highlight">
-              <span className="lbl">Net Balance</span>
-              <span className="val">₹ {balanceTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-            </div>
-            <div className="summary-col">
-              <button
-                type="button"
-                className="btn-whatsapp-sm"
-                onClick={() => openWhatsAppShare(invoice)}
-                title="Send bill on WhatsApp"
-              >
-                <Share2 size={13} /> WhatsApp
-              </button>
-            </div>
-          </div>
         </div>
       )}
 
       {/* TAB CONTENT: BILL & PARTY DETAILS */}
       {activeTab === 'bill' && (
-        <div className="tab-pane">
-          <div className="pane-header">
+        <div className="tab-pane-content">
+          <div className="tab-pane-header">
             <div>
-              <h3 className="pane-title">Invoice & Customer Details</h3>
-              <p className="pane-subtitle">Set bill number, date, consignee, and advance deductions.</p>
+              <h3 className="tab-heading">Consignee & Invoice Metadata</h3>
+              <p className="tab-subheading">Set customer name, bill numbering, advance deduction, and dates.</p>
             </div>
             {onOpenDirectoryModal && (
-              <button type="button" className="btn-secondary-sm" onClick={onOpenDirectoryModal}>
-                <User size={14} /> Open Directory
+              <button type="button" className="btn-header btn-header-ghost" onClick={onOpenDirectoryModal}>
+                <User size={14} /> Directory
               </button>
             )}
           </div>
 
-          {/* Customer Datalist */}
           <datalist id="customers-master-list">
             {customers.map((c) => (
               <option key={c.id} value={c.name}>
@@ -438,10 +411,10 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
             ))}
           </datalist>
 
-          <div className="form-section-grid">
-            <div className="input-group col-span-8">
+          <div className="form-grid-layout">
+            <div className="form-group col-8">
               <div className="flex-between">
-                <label>M/S Consignee / Transport Party Name</label>
+                <label>M/S Transport Party / Consignee Name *</label>
                 {invoice.clientName && onQuickSaveCustomer && (
                   <button
                     type="button"
@@ -457,18 +430,18 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
                 list="customers-master-list"
                 value={invoice.clientName}
                 placeholder="ADNISHA TRANSPORT"
-                style={{ textTransform: 'uppercase', fontWeight: 600 }}
+                style={{ textTransform: 'uppercase', fontWeight: 700 }}
                 onChange={(e) => handleSelectCustomer(e.target.value)}
               />
             </div>
 
-            <div className="input-group col-span-4">
-              <label>WhatsApp / Phone No</label>
+            <div className="form-group col-4">
+              <label>WhatsApp / Phone</label>
               <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                <Phone size={14} style={{ position: 'absolute', left: '8px', color: '#94a3b8' }} />
+                <Phone size={13} style={{ position: 'absolute', left: '10px', color: '#94a3b8' }} />
                 <input
                   type="text"
-                  placeholder="e.g. 9876543210"
+                  placeholder="9876543210"
                   value={invoice.clientPhone || ''}
                   style={{ paddingLeft: '28px' }}
                   onChange={(e) => updateInvoice('clientPhone', e.target.value)}
@@ -476,17 +449,18 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
               </div>
             </div>
 
-            <div className="input-group col-span-6">
+            <div className="form-group col-6">
               <label>Bill No</label>
               <input
                 type="text"
                 value={invoice.billNo}
                 placeholder="122/ 2026-27"
+                style={{ fontWeight: 600, fontFamily: 'monospace' }}
                 onChange={(e) => updateInvoice('billNo', e.target.value)}
               />
             </div>
 
-            <div className="input-group col-span-6">
+            <div className="form-group col-6">
               <label>Invoice Date</label>
               <input
                 type="text"
@@ -496,7 +470,7 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
               />
             </div>
 
-            <div className="input-group col-span-6">
+            <div className="form-group col-6">
               <label>BE No (Bill of Entry / Booking No)</label>
               <input
                 type="text"
@@ -506,7 +480,7 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
               />
             </div>
 
-            <div className="input-group col-span-6">
+            <div className="form-group col-6">
               <label>BE Date</label>
               <input
                 type="text"
@@ -516,8 +490,8 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
               />
             </div>
 
-            <div className="input-group col-span-6">
-              <label>Advance Deduction (₹)</label>
+            <div className="form-group col-6">
+              <label style={{ color: '#f59e0b', fontWeight: 600 }}>Advance Deduction (₹)</label>
               <input
                 type="number"
                 step="any"
@@ -527,7 +501,7 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
               />
             </div>
 
-            <div className="input-group col-span-6">
+            <div className="form-group col-6">
               <label>Invoice Title Tag</label>
               <input
                 type="text"
@@ -537,7 +511,7 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
               />
             </div>
 
-            <div className="input-group col-span-12">
+            <div className="form-group col-12">
               <div className="flex-between">
                 <label>Amount in Words (Auto-generated)</label>
                 <button
@@ -545,7 +519,7 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
                   className="btn-link-xs"
                   onClick={() => updateInvoice('customAmountInWords', numberToIndianWords(balanceTotal || billTotal))}
                 >
-                  <RefreshCw size={11} /> Reset to Auto
+                  <RefreshCw size={11} /> Reset Auto
                 </button>
               </div>
               <input
@@ -558,8 +532,8 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
               <span className="field-hint">Default: {numberToIndianWords(balanceTotal || billTotal)}</span>
             </div>
 
-            <div className="input-group col-span-12">
-              <label>GST Tax Payable By Text</label>
+            <div className="form-group col-12">
+              <label>GST Tax Payable By Statement</label>
               <input
                 type="text"
                 value={invoice.customGstPayableBy || ''}
@@ -567,7 +541,6 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
                 style={{ textTransform: 'uppercase' }}
                 onChange={(e) => updateInvoice('customGstPayableBy', e.target.value.toUpperCase())}
               />
-              <span className="field-hint">Appears in: "GST TAX PAYABLE BY [Party Name]"</span>
             </div>
           </div>
         </div>
@@ -575,16 +548,16 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
 
       {/* TAB CONTENT: COMPANY PROFILE */}
       {activeTab === 'company' && (
-        <div className="tab-pane">
-          <div className="pane-header">
+        <div className="tab-pane-content">
+          <div className="tab-pane-header">
             <div>
-              <h3 className="pane-title">Company Header & Letterhead</h3>
-              <p className="pane-subtitle">Modify the company name (red bold title), tagline, addresses, and contacts.</p>
+              <h3 className="tab-heading">Letterhead & Brand Information</h3>
+              <p className="tab-subheading">Customize company header, jurisdiction, and official contacts.</p>
             </div>
             {onSaveAsDefaultProfile && (
               <button
                 type="button"
-                className="btn-secondary-sm"
+                className="btn-header btn-header-save"
                 onClick={onSaveAsDefaultProfile}
               >
                 Save as Default
@@ -592,8 +565,8 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
             )}
           </div>
 
-          <div className="form-section-grid">
-            <div className="input-group col-span-12">
+          <div className="form-grid-layout">
+            <div className="form-group col-12">
               <label>Top Jurisdiction Line</label>
               <input
                 type="text"
@@ -603,18 +576,18 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
               />
             </div>
 
-            <div className="input-group col-span-12">
-              <label className="text-danger">Company Main Name (Red Header)</label>
+            <div className="form-group col-12">
+              <label style={{ color: '#ef4444', fontWeight: 700 }}>Company Name (Main Red Heading)</label>
               <input
                 type="text"
                 value={invoice.company.companyName}
                 placeholder="SWAMI KRUPA ROADLINES"
-                style={{ color: '#d60000', fontWeight: 800, textTransform: 'uppercase' }}
+                style={{ color: '#ef4444', fontWeight: 800, textTransform: 'uppercase' }}
                 onChange={(e) => updateInvoice('company.companyName', e.target.value.toUpperCase())}
               />
             </div>
 
-            <div className="input-group col-span-12">
+            <div className="form-group col-12">
               <label>Tagline (Underlined)</label>
               <input
                 type="text"
@@ -625,7 +598,7 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
               />
             </div>
 
-            <div className="input-group col-span-12">
+            <div className="form-group col-12">
               <label>Address Line 1</label>
               <input
                 type="text"
@@ -636,7 +609,7 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
               />
             </div>
 
-            <div className="input-group col-span-12">
+            <div className="form-group col-12">
               <label>Address Line 2 (City & Pincode)</label>
               <input
                 type="text"
@@ -647,7 +620,7 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
               />
             </div>
 
-            <div className="input-group col-span-6">
+            <div className="form-group col-6">
               <label>Email Address</label>
               <input
                 type="text"
@@ -657,7 +630,7 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
               />
             </div>
 
-            <div className="input-group col-span-6">
+            <div className="form-group col-6">
               <label>Mobile Numbers</label>
               <input
                 type="text"
@@ -667,13 +640,13 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
               />
             </div>
 
-            <div className="input-group col-span-12">
+            <div className="form-group col-12">
               <label>PAN No</label>
               <input
                 type="text"
                 value={invoice.company.panNo}
                 placeholder="CAYPG4986P"
-                style={{ textTransform: 'uppercase' }}
+                style={{ textTransform: 'uppercase', fontFamily: 'monospace' }}
                 onChange={(e) => updateInvoice('company.panNo', e.target.value.toUpperCase())}
               />
             </div>
@@ -683,16 +656,16 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
 
       {/* TAB CONTENT: BANK & TERMS */}
       {activeTab === 'bank' && (
-        <div className="tab-pane">
-          <div className="pane-header">
+        <div className="tab-pane-content">
+          <div className="tab-pane-header">
             <div>
-              <h3 className="pane-title">Bank Details & Terms of Service</h3>
-              <p className="pane-subtitle">Configure banking information and invoice terms.</p>
+              <h3 className="tab-heading">Banking & Legal Terms</h3>
+              <p className="tab-subheading">Set bank account details for RTGS/NEFT and invoice legal conditions.</p>
             </div>
             {onSaveAsDefaultProfile && (
               <button
                 type="button"
-                className="btn-secondary-sm"
+                className="btn-header btn-header-save"
                 onClick={onSaveAsDefaultProfile}
               >
                 Save as Default
@@ -700,8 +673,8 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
             )}
           </div>
 
-          <div className="form-section-grid">
-            <div className="input-group col-span-12">
+          <div className="form-grid-layout">
+            <div className="form-group col-12">
               <label>Bank Name</label>
               <input
                 type="text"
@@ -712,7 +685,7 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
               />
             </div>
 
-            <div className="input-group col-span-12">
+            <div className="form-group col-12">
               <label>Branch Name</label>
               <input
                 type="text"
@@ -723,29 +696,30 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
               />
             </div>
 
-            <div className="input-group col-span-6">
+            <div className="form-group col-6">
               <label>Account Number</label>
               <input
                 type="text"
                 value={invoice.bank.accountNo}
                 placeholder="032011200000548"
+                style={{ fontFamily: 'monospace', fontWeight: 600 }}
                 onChange={(e) => updateInvoice('bank.accountNo', e.target.value)}
               />
             </div>
 
-            <div className="input-group col-span-6">
+            <div className="form-group col-6">
               <label>IFSC Code</label>
               <input
                 type="text"
                 value={invoice.bank.ifscCode}
                 placeholder="MCBL0960032"
-                style={{ textTransform: 'uppercase' }}
+                style={{ textTransform: 'uppercase', fontFamily: 'monospace' }}
                 onChange={(e) => updateInvoice('bank.ifscCode', e.target.value.toUpperCase())}
               />
             </div>
 
-            <div className="input-group col-span-6">
-              <label>Signature Text (Red)</label>
+            <div className="form-group col-6">
+              <label style={{ color: '#ef4444' }}>Signature Line (Red)</label>
               <input
                 type="text"
                 value={invoice.company.signatureForText}
@@ -754,8 +728,8 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
               />
             </div>
 
-            <div className="input-group col-span-6">
-              <label>Designation Text</label>
+            <div className="form-group col-6">
+              <label>Designation Label</label>
               <input
                 type="text"
                 value={invoice.company.proprietorText}
@@ -764,11 +738,11 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
               />
             </div>
 
-            <div className="input-group col-span-12">
-              <label>Terms & Conditions</label>
+            <div className="form-group col-12">
+              <label>Transport Terms & Conditions</label>
               {invoice.company.terms.map((term, tIdx) => (
-                <div key={tIdx} className="term-input-row" style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-                  <span style={{ fontWeight: 600, alignSelf: 'center', minWidth: '20px' }}>{tIdx + 1}.</span>
+                <div key={tIdx} style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                  <span style={{ fontWeight: 700, alignSelf: 'center', minWidth: '20px', color: '#94a3b8' }}>{tIdx + 1}.</span>
                   <input
                     type="text"
                     value={term}
@@ -787,24 +761,50 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
                       updateInvoice('company.terms', newTerms);
                     }}
                   >
-                    <Trash2 size={14} />
+                    <Trash2 size={13} />
                   </button>
                 </div>
               ))}
               <button
                 type="button"
-                className="btn-secondary-sm"
-                style={{ marginTop: '6px' }}
+                className="btn-header btn-header-ghost"
+                style={{ marginTop: '4px', alignSelf: 'flex-start' }}
                 onClick={() => {
-                  updateInvoice('company.terms', [...invoice.company.terms, 'New term condition']);
+                  updateInvoice('company.terms', [...invoice.company.terms, 'New transport condition']);
                 }}
               >
-                <Plus size={14} /> Add Term
+                <Plus size={13} /> Add Condition
               </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* Financial Summary Strip */}
+      <div className="editor-footer-summary">
+        <div className="metric-box">
+          <span className="metric-label">Total Amount</span>
+          <span className="metric-value">₹ {formatCurrency(billTotal)}</span>
+        </div>
+        <div className="metric-box">
+          <span className="metric-label">Advance Less</span>
+          <span className="metric-value" style={{ color: '#f59e0b' }}>₹ {formatCurrency(advanceAmount)}</span>
+        </div>
+        <div className="metric-box highlight">
+          <span className="metric-label">Net Balance</span>
+          <span className="metric-value">₹ {formatCurrency(balanceTotal)}</span>
+        </div>
+        <div>
+          <button
+            type="button"
+            className="btn-header btn-header-whatsapp"
+            onClick={() => openWhatsAppShare(invoice)}
+            title="Share Bill Breakdown on WhatsApp"
+          >
+            <Share2 size={13} /> WhatsApp
+          </button>
+        </div>
+      </div>
     </div>
   );
 };

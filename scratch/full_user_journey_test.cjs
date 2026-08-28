@@ -45,8 +45,8 @@ async function executeFullUserJourneyTests() {
     const billNoText = await page.textContent('.invoice-meta-right');
     record('New Bill Auto-Numbering', 'PASS', `Generated: ${billNoText.trim()}`);
 
-    // Switch to Bill tab and enter party details
-    await page.click('button:has-text("Bill & Party Info")');
+    // Switch to Party & Bill tab and enter party details
+    await page.click('button:has-text("Party & Bill")');
     await page.waitForTimeout(200);
 
     const partyInput = page.locator('input[list="customers-master-list"]');
@@ -74,31 +74,31 @@ async function executeFullUserJourneyTests() {
     if (particularsAreas.length > 0) {
       await particularsAreas[0].fill('NHAVA SHEVA TO KALAMBOLI');
     }
-    const amountInputs = await page.$$('.input-highlight');
+    const amountInputs = await page.$$('.amount-input-highlight');
     if (amountInputs.length > 0) {
       await amountInputs[0].fill('22000');
     }
 
     // Add Row 2 using Quick Preset
-    const addEmptyBtn = page.locator('.preset-chip', { hasText: 'EMPTY OFFLOADING' });
+    const addEmptyBtn = page.locator('.action-chip', { hasText: 'EMPTY OFFLOADING' });
     await addEmptyBtn.click();
     await page.waitForTimeout(300);
 
-    const allAmounts = await page.$$('.input-highlight');
+    const allAmounts = await page.$$('.amount-input-highlight');
     await allAmounts[allAmounts.length - 1].fill('4500');
     await page.waitForTimeout(300);
 
     // Add Row 3 (Toll charges)
-    const addTollBtn = page.locator('.preset-chip', { hasText: 'TOLL CHARGES' });
+    const addTollBtn = page.locator('.action-chip', { hasText: 'TOLL CHARGES' });
     await addTollBtn.click();
     await page.waitForTimeout(300);
 
-    const allAmountsAfterToll = await page.$$('.input-highlight');
+    const allAmountsAfterToll = await page.$$('.amount-input-highlight');
     await allAmountsAfterToll[allAmountsAfterToll.length - 1].fill('1500');
     await page.waitForTimeout(300);
 
     // Enter Advance deduction
-    await page.click('button:has-text("Bill & Party Info")');
+    await page.click('button:has-text("Party & Bill")');
     await page.waitForTimeout(200);
     const advInput = page.locator('input[placeholder="0.00"]').first();
     await advInput.fill('5000');
@@ -198,7 +198,7 @@ async function executeFullUserJourneyTests() {
     // TEST JOURNEY 4: Reset & Load Sample Bill
     // ----------------------------------------------------
     console.log('\n--- Journey 4: Original Sample Bill Restore ---');
-    await page.click('button:has-text("Load Sample Bill")');
+    await page.click('button:has-text("Demo Sample")');
     await page.waitForTimeout(400);
 
     const resetTitle = await page.textContent('.invoice-company-title');

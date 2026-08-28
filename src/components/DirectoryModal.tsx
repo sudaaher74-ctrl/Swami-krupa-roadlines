@@ -150,11 +150,11 @@ export const DirectoryModal: React.FC<DirectoryModalProps> = ({
         {/* Header */}
         <div className="modal-header">
           <div className="modal-title-group">
-            <Users size={20} className="text-primary" />
-            <h2>Master Directory</h2>
+            <Users size={18} style={{ color: '#60a5fa' }} />
+            <h2>Customer & Vehicle Directory</h2>
           </div>
           <button className="btn-icon" onClick={onClose}>
-            <X size={18} />
+            <X size={16} />
           </button>
         </div>
 
@@ -167,7 +167,7 @@ export const DirectoryModal: React.FC<DirectoryModalProps> = ({
               resetForms();
             }}
           >
-            <Users size={16} />
+            <Users size={15} />
             <span>Customers / Parties ({customers.length})</span>
           </button>
           <button
@@ -177,7 +177,7 @@ export const DirectoryModal: React.FC<DirectoryModalProps> = ({
               resetForms();
             }}
           >
-            <Truck size={16} />
+            <Truck size={15} />
             <span>Vehicles / Trucks ({vehicles.length})</span>
           </button>
         </div>
@@ -185,7 +185,7 @@ export const DirectoryModal: React.FC<DirectoryModalProps> = ({
         {/* Search & Add bar */}
         <div className="modal-search-bar flex-between">
           <div style={{ position: 'relative', flex: 1, marginRight: '12px' }}>
-            <Search size={16} className="search-icon" />
+            <Search size={15} className="search-icon" style={{ position: 'absolute', left: '12px', top: '10px', color: '#64748b' }} />
             <input
               type="text"
               placeholder={`Search ${activeTab === 'customers' ? 'party names, phones...' : 'vehicle numbers...'}`}
@@ -195,13 +195,13 @@ export const DirectoryModal: React.FC<DirectoryModalProps> = ({
           </div>
           {!isAdding && (
             <button
-              className="btn-primary-sm"
+              className="btn-header btn-header-print"
               onClick={() => {
                 resetForms();
                 setIsAdding(true);
               }}
             >
-              <Plus size={15} /> Add {activeTab === 'customers' ? 'Party' : 'Vehicle'}
+              <Plus size={14} /> Add {activeTab === 'customers' ? 'Party' : 'Vehicle'}
             </button>
           )}
         </div>
@@ -210,14 +210,14 @@ export const DirectoryModal: React.FC<DirectoryModalProps> = ({
         <div className="modal-list-body">
           {/* Add / Edit Form Panel */}
           {isAdding && (
-            <div className="directory-form-card">
-              <h4 className="form-card-title">
+            <div className="directory-form-card" style={{ background: '#111827', border: '1px solid #374151', borderRadius: '10px', padding: '16px', marginBottom: '16px' }}>
+              <h4 style={{ fontSize: '13.5px', fontWeight: 700, marginBottom: '12px', color: '#60a5fa' }}>
                 {editingId ? `Edit ${activeTab === 'customers' ? 'Party' : 'Vehicle'}` : `Add New ${activeTab === 'customers' ? 'Party' : 'Vehicle'}`}
               </h4>
 
               {activeTab === 'customers' ? (
-                <form onSubmit={handleSaveCustomer} className="form-section-grid">
-                  <div className="input-group col-span-8">
+                <form onSubmit={handleSaveCustomer} className="form-grid-layout">
+                  <div className="form-group col-8">
                     <label>Party / Company Name *</label>
                     <input
                       type="text"
@@ -228,7 +228,7 @@ export const DirectoryModal: React.FC<DirectoryModalProps> = ({
                       autoFocus
                     />
                   </div>
-                  <div className="input-group col-span-4">
+                  <div className="form-group col-4">
                     <label>WhatsApp / Phone</label>
                     <input
                       type="text"
@@ -237,7 +237,7 @@ export const DirectoryModal: React.FC<DirectoryModalProps> = ({
                       onChange={(e) => setCPhone(e.target.value)}
                     />
                   </div>
-                  <div className="input-group col-span-6">
+                  <div className="form-group col-6">
                     <label>GSTIN No</label>
                     <input
                       type="text"
@@ -246,7 +246,7 @@ export const DirectoryModal: React.FC<DirectoryModalProps> = ({
                       onChange={(e) => setCGst(e.target.value.toUpperCase())}
                     />
                   </div>
-                  <div className="input-group col-span-6">
+                  <div className="form-group col-6">
                     <label>Address / Branch</label>
                     <input
                       type="text"
@@ -255,18 +255,18 @@ export const DirectoryModal: React.FC<DirectoryModalProps> = ({
                       onChange={(e) => setCAddress(e.target.value)}
                     />
                   </div>
-                  <div className="col-span-12" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '6px' }}>
-                    <button type="button" className="btn-secondary-sm" onClick={resetForms}>
+                  <div className="col-12" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '6px' }}>
+                    <button type="button" className="btn-header btn-header-ghost" onClick={resetForms}>
                       Cancel
                     </button>
-                    <button type="submit" className="btn-primary-sm">
+                    <button type="submit" className="btn-header btn-header-save">
                       <Check size={14} /> Save Party
                     </button>
                   </div>
                 </form>
               ) : (
-                <form onSubmit={handleSaveVehicle} className="form-section-grid">
-                  <div className="input-group col-span-6">
+                <form onSubmit={handleSaveVehicle} className="form-grid-layout">
+                  <div className="form-group col-6">
                     <label>Vehicle Number *</label>
                     <input
                       type="text"
@@ -277,7 +277,7 @@ export const DirectoryModal: React.FC<DirectoryModalProps> = ({
                       autoFocus
                     />
                   </div>
-                  <div className="input-group col-span-6">
+                  <div className="form-group col-6">
                     <label>Vehicle Type</label>
                     <input
                       type="text"
@@ -286,7 +286,7 @@ export const DirectoryModal: React.FC<DirectoryModalProps> = ({
                       onChange={(e) => setVType(e.target.value)}
                     />
                   </div>
-                  <div className="input-group col-span-6">
+                  <div className="form-group col-6">
                     <label>Driver / Transporter Name</label>
                     <input
                       type="text"
@@ -295,7 +295,7 @@ export const DirectoryModal: React.FC<DirectoryModalProps> = ({
                       onChange={(e) => setVDriver(e.target.value)}
                     />
                   </div>
-                  <div className="input-group col-span-6">
+                  <div className="form-group col-6">
                     <label>Driver Phone</label>
                     <input
                       type="text"
@@ -304,11 +304,11 @@ export const DirectoryModal: React.FC<DirectoryModalProps> = ({
                       onChange={(e) => setVDriverPhone(e.target.value)}
                     />
                   </div>
-                  <div className="col-span-12" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '6px' }}>
-                    <button type="button" className="btn-secondary-sm" onClick={resetForms}>
+                  <div className="col-12" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '6px' }}>
+                    <button type="button" className="btn-header btn-header-ghost" onClick={resetForms}>
                       Cancel
                     </button>
-                    <button type="submit" className="btn-primary-sm">
+                    <button type="submit" className="btn-header btn-header-save">
                       <Check size={14} /> Save Vehicle
                     </button>
                   </div>
@@ -327,10 +327,10 @@ export const DirectoryModal: React.FC<DirectoryModalProps> = ({
                 </div>
               ) : (
                 filteredCustomers.map((c) => (
-                  <div key={c.id} className="directory-card">
-                    <div className="directory-card-header">
-                      <h4 className="directory-name">{c.name}</h4>
-                      <div className="card-actions">
+                  <div key={c.id} className="directory-card" style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '10px', padding: '14px' }}>
+                    <div className="directory-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                      <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#f8fafc' }}>{c.name}</h4>
+                      <div className="card-actions" style={{ display: 'flex', gap: '4px' }}>
                         <button className="btn-icon" title="Edit" onClick={() => startEditCustomer(c)}>
                           <Edit2 size={13} />
                         </button>
@@ -340,22 +340,22 @@ export const DirectoryModal: React.FC<DirectoryModalProps> = ({
                       </div>
                     </div>
 
-                    <div className="directory-meta">
+                    <div className="directory-meta" style={{ fontSize: '12px', color: '#94a3b8', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       {c.phone && (
-                        <div className="meta-line">
-                          <Phone size={12} className="text-muted" />
+                        <div className="meta-line" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <Phone size={12} style={{ color: '#22c55e' }} />
                           <span>{c.phone}</span>
                         </div>
                       )}
-                      {c.gstin && <div className="meta-line"><strong>GSTIN:</strong> {c.gstin}</div>}
-                      {c.address && <div className="meta-line"><strong>Loc:</strong> {c.address}</div>}
+                      {c.gstin && <div><strong style={{ color: '#cbd5e1' }}>GSTIN:</strong> {c.gstin}</div>}
+                      {c.address && <div><strong style={{ color: '#cbd5e1' }}>Loc:</strong> {c.address}</div>}
                     </div>
 
                     {onSelectCustomer && (
                       <button
                         type="button"
-                        className="btn-secondary-sm"
-                        style={{ marginTop: '8px', width: '100%', justifyContent: 'center' }}
+                        className="btn-header btn-header-ghost"
+                        style={{ marginTop: '10px', width: '100%', justifyContent: 'center', fontSize: '11.5px' }}
                         onClick={() => {
                           onSelectCustomer(c);
                           onClose();
@@ -380,10 +380,10 @@ export const DirectoryModal: React.FC<DirectoryModalProps> = ({
                 </div>
               ) : (
                 filteredVehicles.map((v) => (
-                  <div key={v.id} className="directory-card">
-                    <div className="directory-card-header">
-                      <h4 className="directory-name">{v.vehicleNo}</h4>
-                      <div className="card-actions">
+                  <div key={v.id} className="directory-card" style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '10px', padding: '14px' }}>
+                    <div className="directory-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                      <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#60a5fa', fontFamily: 'monospace' }}>{v.vehicleNo}</h4>
+                      <div className="card-actions" style={{ display: 'flex', gap: '4px' }}>
                         <button className="btn-icon" title="Edit" onClick={() => startEditVehicle(v)}>
                           <Edit2 size={13} />
                         </button>
@@ -393,10 +393,10 @@ export const DirectoryModal: React.FC<DirectoryModalProps> = ({
                       </div>
                     </div>
 
-                    <div className="directory-meta">
-                      {v.type && <div className="meta-line"><strong>Type:</strong> {v.type}</div>}
-                      {v.driverName && <div className="meta-line"><strong>Driver:</strong> {v.driverName}</div>}
-                      {v.driverPhone && <div className="meta-line"><strong>Phone:</strong> {v.driverPhone}</div>}
+                    <div className="directory-meta" style={{ fontSize: '12px', color: '#94a3b8', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      {v.type && <div><strong style={{ color: '#cbd5e1' }}>Type:</strong> {v.type}</div>}
+                      {v.driverName && <div><strong style={{ color: '#cbd5e1' }}>Driver:</strong> {v.driverName}</div>}
+                      {v.driverPhone && <div><strong style={{ color: '#cbd5e1' }}>Phone:</strong> {v.driverPhone}</div>}
                     </div>
                   </div>
                 ))

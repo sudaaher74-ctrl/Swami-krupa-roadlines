@@ -72,26 +72,26 @@ export const SavedInvoicesModal: React.FC<SavedInvoicesModalProps> = ({
         {/* Header */}
         <div className="modal-header">
           <div className="modal-title-group">
-            <FileText size={20} className="text-primary" />
-            <h2>Saved Invoices ({savedInvoices.length})</h2>
+            <FileText size={18} style={{ color: '#60a5fa' }} />
+            <h2>Saved Invoices History ({savedInvoices.length})</h2>
           </div>
-          <div className="modal-header-actions">
-            <button className="btn-secondary-sm" onClick={onExportAll} title="Download JSON backup">
-              <Download size={14} /> Export Backup
+          <div className="modal-header-actions" style={{ display: 'flex', gap: '8px' }}>
+            <button className="btn-header btn-header-ghost" onClick={onExportAll} title="Download JSON backup">
+              <Download size={13} /> Export Backup
             </button>
-            <label className="btn-secondary-sm" style={{ cursor: 'pointer' }} title="Import JSON backup">
-              <Upload size={14} /> Import Backup
+            <label className="btn-header btn-header-ghost" style={{ cursor: 'pointer' }} title="Import JSON backup">
+              <Upload size={13} /> Import Backup
               <input type="file" accept=".json" onChange={handleFileUpload} style={{ display: 'none' }} />
             </label>
             <button className="btn-icon" onClick={onClose}>
-              <X size={18} />
+              <X size={16} />
             </button>
           </div>
         </div>
 
         {/* Search Bar */}
         <div className="modal-search-bar">
-          <Search size={16} className="search-icon" />
+          <Search size={15} style={{ position: 'absolute', left: '12px', top: '10px', color: '#64748b' }} />
           <input
             type="text"
             placeholder="Search by Bill No, Client Name, Date, Vehicle, BE No..."
@@ -125,46 +125,51 @@ export const SavedInvoicesModal: React.FC<SavedInvoicesModalProps> = ({
                 const vehicles = Array.from(new Set(inv.items.map((i) => i.vehicleNo).filter(Boolean))).join(', ');
 
                 return (
-                  <div key={inv.id} className="saved-inv-card">
-                    <div className="card-top-row">
-                      <div className="bill-badge">BILL: {inv.billNo || 'N/A'}</div>
-                      <span className="inv-date">{inv.date || 'No Date'}</span>
+                  <div key={inv.id} className="saved-inv-card" style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '10px', padding: '14px' }}>
+                    <div className="card-top-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                      <div className="bill-badge" style={{ background: 'rgba(59, 130, 246, 0.15)', color: '#93c5fa', padding: '2px 8px', borderRadius: '4px', fontSize: '11.5px', fontWeight: 700, fontFamily: 'monospace' }}>
+                        BILL: {inv.billNo || 'N/A'}
+                      </div>
+                      <span className="inv-date" style={{ fontSize: '12px', color: '#94a3b8' }}>{inv.date || 'No Date'}</span>
                     </div>
 
-                    <h4 className="card-client-title">{inv.clientName || 'UNKNOWN PARTY'}</h4>
+                    <h4 className="card-client-title" style={{ fontSize: '14.5px', fontWeight: 700, color: '#f8fafc', margin: '4px 0' }}>
+                      {inv.clientName || 'UNKNOWN PARTY'}
+                    </h4>
 
-                    <div className="card-details-list">
+                    <div className="card-details-list" style={{ fontSize: '12px', color: '#94a3b8', display: 'flex', flexDirection: 'column', gap: '3px', margin: '6px 0' }}>
                       {inv.beNo && (
                         <div className="card-detail-item">
-                          <span className="lbl">BE NO:</span>
+                          <span className="lbl" style={{ color: '#cbd5e1', fontWeight: 600 }}>BE NO:</span>
                           <span className="val">{inv.beNo} (dt.{inv.beDate})</span>
                         </div>
                       )}
                       {vehicles && (
                         <div className="card-detail-item">
-                          <span className="lbl">Vehicles:</span>
+                          <span className="lbl" style={{ color: '#cbd5e1', fontWeight: 600 }}>Trucks:</span>
                           <span className="val">{vehicles}</span>
                         </div>
                       )}
                       <div className="card-detail-item">
-                        <span className="lbl">Items:</span>
-                        <span className="val">{inv.items.length} line{inv.items.length > 1 ? 's' : ''}</span>
+                        <span className="lbl" style={{ color: '#cbd5e1', fontWeight: 600 }}>Items:</span>
+                        <span className="val">{inv.items.length} line item{inv.items.length > 1 ? 's' : ''}</span>
                       </div>
                     </div>
 
-                    <div className="card-bottom-row">
+                    <div className="card-bottom-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px', paddingTop: '8px', borderTop: '1px solid #334155' }}>
                       <div className="card-amount">
-                        <span className="lbl">Total:</span>
-                        <span className="price">₹ {formatCurrency(total)}</span>
+                        <span className="price" style={{ fontSize: '15px', fontWeight: 800, color: '#34d399', fontFamily: 'monospace' }}>
+                          ₹ {formatCurrency(total)}
+                        </span>
                       </div>
 
-                      <div className="card-actions">
+                      <div className="card-actions" style={{ display: 'flex', gap: '4px' }}>
                         <button
                           className="btn-icon"
                           title="Duplicate as new bill"
                           onClick={() => onDuplicateInvoice(inv)}
                         >
-                          <Copy size={15} />
+                          <Copy size={13} />
                         </button>
                         <button
                           className="btn-icon text-danger"
@@ -175,13 +180,14 @@ export const SavedInvoicesModal: React.FC<SavedInvoicesModalProps> = ({
                             }
                           }}
                         >
-                          <Trash2 size={15} />
+                          <Trash2 size={13} />
                         </button>
                         <button
-                          className="btn-primary-sm"
+                          className="btn-header btn-header-print"
+                          style={{ padding: '4px 10px', fontSize: '11.5px' }}
                           onClick={() => onSelectInvoice(inv)}
                         >
-                          <Eye size={14} /> Open
+                          <Eye size={13} /> Open
                         </button>
                       </div>
                     </div>
