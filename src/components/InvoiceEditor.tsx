@@ -12,10 +12,13 @@ import {
   RefreshCw,
   Phone,
   BookmarkPlus,
-  Share2
+  Share2,
+  Zap,
+  PlusCircle
 } from 'lucide-react';
 import { numberToIndianWords, formatCurrency } from '../utils/numberToWords';
 import { openWhatsAppShare } from '../utils/exportUtils';
+import { calculateNextBillNumber } from '../utils/billNumberUtils';
 
 interface InvoiceEditorProps {
   invoice: InvoiceData;
@@ -23,6 +26,8 @@ interface InvoiceEditorProps {
   onSaveAsDefaultProfile?: () => void;
   customers?: CustomerRecord[];
   vehicles?: VehicleRecord[];
+  savedInvoices?: InvoiceData[];
+  onSaveAndNext?: () => void;
   onQuickSaveCustomer?: (name: string, phone?: string) => void;
   onQuickSaveVehicle?: (vehicleNo: string) => void;
   onOpenDirectoryModal?: () => void;
@@ -34,11 +39,14 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
   onSaveAsDefaultProfile,
   customers = [],
   vehicles = [],
+  savedInvoices = [],
+  onSaveAndNext,
   onQuickSaveCustomer,
   onQuickSaveVehicle,
   onOpenDirectoryModal,
 }) => {
   const [activeTab, setActiveTab] = useState<'items' | 'bill' | 'company' | 'bank'>('items');
+  const nextAutoBillNo = calculateNextBillNumber(savedInvoices, invoice);
 
   // Quick preset particulars common in transport billing
   const quickParticulars = [
@@ -396,11 +404,23 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
               <h3 className="tab-heading">Consignee & Invoice Metadata</h3>
               <p className="tab-subheading">Set customer name, bill numbering, advance deduction, and dates.</p>
             </div>
-            {onOpenDirectoryModal && (
-              <button type="button" className="btn-header btn-header-ghost" onClick={onOpenDirectoryModal}>
-                <User size={14} /> Directory
-              </button>
-            )}
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {onOpenDirectoryModal && (
+                <button type="button" className="btn-header btn-header-ghost" onClick={onOpenDirectoryModal}>
+                  <User size={14} /> Directory
+                </button>
+              )}
+              {onSaveAndNext && (
+                <button
+                  type="button"
+                  className="btn-header btn-header-save-next"
+                  onClick={onSaveAndNext}
+                  title="Save current bill and auto-prepare next sequential bill"
+                >
+                  <PlusCircle size={14} /> Save & Next
+                </button>
+              )}
+            </div>
           </div>
 
           <datalist id="customers-master-list">
@@ -450,11 +470,21 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
             </div>
 
             <div className="form-group col-6">
-              <label>Bill No</label>
+              <div className="flex-between">
+                <label>Bill No *</label>
+                <button
+                  type="button"
+                  className="btn-link-xs"
+                  title={`Set to next automatic sequence (${nextAutoBillNo})`}
+                  onClick={() => updateInvoice('billNo', nextAutoBillNo)}
+                >
+                  <Zap size={11} /> Auto Next ({nextAutoBillNo.split('/')[0]})
+                </button>
+              </div>
               <input
                 type="text"
                 value={invoice.billNo}
-                placeholder="122/ 2026-27"
+                placeholder={nextAutoBillNo}
                 style={{ fontWeight: 600, fontFamily: 'monospace' }}
                 onChange={(e) => updateInvoice('billNo', e.target.value)}
               />

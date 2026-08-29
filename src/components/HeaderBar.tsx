@@ -18,6 +18,7 @@ import {
 interface HeaderBarProps {
   onNewInvoice: () => void;
   onSaveInvoice: () => void;
+  onSaveAndNextInvoice?: () => void;
   onPrint: () => void;
   onDownloadPDF: () => void;
   onWhatsAppShare: () => void;
@@ -37,6 +38,7 @@ interface HeaderBarProps {
 export const HeaderBar: React.FC<HeaderBarProps> = ({
   onNewInvoice,
   onSaveInvoice,
+  onSaveAndNextInvoice,
   onPrint,
   onDownloadPDF,
   onWhatsAppShare,
@@ -171,6 +173,17 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
         >
           <Save size={14} /> Save
         </button>
+
+        {onSaveAndNextInvoice && (
+          <button
+            type="button"
+            className="btn-header btn-header-save-next"
+            onClick={onSaveAndNextInvoice}
+            title="Save this bill and immediately open next sequential bill"
+          >
+            <PlusCircle size={14} /> Save & Next
+          </button>
+        )}
 
         <button
           type="button"

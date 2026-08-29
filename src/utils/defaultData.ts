@@ -1,4 +1,5 @@
 import type { InvoiceData, CompanyProfile, BankDetails } from '../types/invoice';
+import { getCurrentFinancialYear } from './billNumberUtils';
 
 export const defaultCompanyProfile: CompanyProfile = {
   jurisdiction: 'Subject To Navi Mumbai Jurisdiction',
@@ -78,7 +79,7 @@ export function createNewInvoice(billNumber?: string): InvoiceData {
     id: 'inv-' + Date.now(),
     title: 'TAX INVOICE',
     clientName: '',
-    billNo: billNumber || `101/ ${yyyy}-${String(yyyy + 1).slice(-2)}`,
+    billNo: billNumber || `123/ ${getCurrentFinancialYear(today)}`,
     date: formattedDate,
     beNo: '',
     beDate: formattedDate,

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { InvoiceData, CustomerRecord, VehicleRecord } from './types/invoice';
 import { defaultInvoice, createNewInvoice } from './utils/defaultData';
+import { calculateNextBillNumber, recordBillSequenceNumber } from './utils/billNumberUtils';
 import { HeaderBar } from './components/HeaderBar';
 import { InvoiceDocument } from './components/InvoiceDocument';
 import { InvoiceEditor } from './components/InvoiceEditor';
@@ -110,6 +111,7 @@ export const App: React.FC = () => {
   // Invoice Handlers
   const handleSaveInvoice = () => {
     const updated = { ...currentInvoice, updatedAt: new Date().toISOString() };
+    recordBillSequenceNumber(updated.billNo);
     const existingIndex = savedInvoices.findIndex((inv) => inv.id === updated.id);
 
     if (existingIndex >= 0) {
@@ -123,26 +125,44 @@ export const App: React.FC = () => {
     }
   };
 
-  const handleNewInvoice = () => {
-    let nextNum = 123;
-    try {
-      const highestMatch = savedInvoices
-        .map((inv) => {
-          const match = inv.billNo.match(/^(\d+)/);
-          return match ? parseInt(match[1], 10) : 0;
-        })
-        .filter((n) => !isNaN(n));
+  const handleSaveAndNextInvoice = () => {
+    const updated = { ...currentInvoice, updatedAt: new Date().toISOString() };
+    recordBillSequenceNumber(updated.billNo);
+    
+    let updatedList = [...savedInvoices];
+    const existingIndex = savedInvoices.findIndex((inv) => inv.id === updated.id);
+    if (existingIndex >= 0) {
+      updatedList[existingIndex] = updated;
+    } else {
+      updatedList = [updated, ...savedInvoices];
+    }
+    setSavedInvoices(updatedList);
 
-      if (highestMatch.length > 0) {
-        nextNum = Math.max(...highestMatch) + 1;
-      }
-    } catch (e) {
-      nextNum = 123;
+    // Calculate next sequential bill number
+    const nextBillNo = calculateNextBillNumber(updatedList, updated);
+    recordBillSequenceNumber(nextBillNo);
+
+    const newInv = createNewInvoice(nextBillNo);
+    try {
+      const savedComp = localStorage.getItem(LOCAL_STORAGE_KEY_COMPANY);
+      if (savedComp) newInv.company = JSON.parse(savedComp);
+
+      const savedBank = localStorage.getItem(LOCAL_STORAGE_KEY_BANK);
+      if (savedBank) newInv.bank = JSON.parse(savedBank);
+    } catch (e) {}
+
+    // Inherit the same reference document type (BE NO vs INVOICE NO) from current bill
+    if (currentInvoice.refDocType) {
+      newInv.refDocType = currentInvoice.refDocType;
     }
 
-    const currentYear = new Date().getFullYear();
-    const financialYear = `${currentYear}-${String(currentYear + 1).slice(-2)}`;
-    const newBillNo = `${nextNum}/ ${financialYear}`;
+    setCurrentInvoice(newInv);
+    showToast(`Saved #${updated.billNo}! Created Next Bill #${nextBillNo}`);
+  };
+
+  const handleNewInvoice = () => {
+    const newBillNo = calculateNextBillNumber(savedInvoices, currentInvoice);
+    recordBillSequenceNumber(newBillNo);
 
     const newInv = createNewInvoice(newBillNo);
 
@@ -153,6 +173,10 @@ export const App: React.FC = () => {
       const savedBank = localStorage.getItem(LOCAL_STORAGE_KEY_BANK);
       if (savedBank) newInv.bank = JSON.parse(savedBank);
     } catch (e) {}
+
+    if (currentInvoice.refDocType) {
+      newInv.refDocType = currentInvoice.refDocType;
+    }
 
     setCurrentInvoice(newInv);
     showToast(`Created new Bill #${newBillNo}`);
@@ -342,6 +366,7 @@ export const App: React.FC = () => {
       <HeaderBar
         onNewInvoice={handleNewInvoice}
         onSaveInvoice={handleSaveInvoice}
+        onSaveAndNextInvoice={handleSaveAndNextInvoice}
         onPrint={handlePrint}
         onDownloadPDF={handleDownloadPDF}
         onWhatsAppShare={handleWhatsAppShare}
@@ -369,6 +394,8 @@ export const App: React.FC = () => {
               onSaveAsDefaultProfile={handleSaveAsDefaultProfile}
               customers={customers}
               vehicles={vehicles}
+              savedInvoices={savedInvoices}
+              onSaveAndNext={handleSaveAndNextInvoice}
               onQuickSaveCustomer={handleQuickSaveCustomer}
               onQuickSaveVehicle={handleQuickSaveVehicle}
               onOpenDirectoryModal={() => setIsDirectoryModalOpen(true)}
