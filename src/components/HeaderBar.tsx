@@ -12,7 +12,8 @@ import {
   Maximize2,
   Download,
   Share2,
-  Users
+  Users,
+  Fuel
 } from 'lucide-react';
 
 interface HeaderBarProps {
@@ -24,6 +25,7 @@ interface HeaderBarProps {
   onWhatsAppShare: () => void;
   onOpenSavedModal: () => void;
   onOpenDirectoryModal: () => void;
+  onOpenTripSlipModal?: () => void;
   savedCount: number;
   zoom: number;
   onZoomIn: () => void;
@@ -44,6 +46,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   onWhatsAppShare,
   onOpenSavedModal,
   onOpenDirectoryModal,
+  onOpenTripSlipModal,
   savedCount,
   zoom,
   onZoomIn,
@@ -136,6 +139,18 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
         >
           <FolderOpen size={14} /> Bills ({savedCount})
         </button>
+
+        {onOpenTripSlipModal && (
+          <button
+            type="button"
+            className="btn-header btn-header-ghost"
+            onClick={onOpenTripSlipModal}
+            title="Create and print Vehicle Trip & Driver Advance Slips"
+            style={{ color: '#38bdf8' }}
+          >
+            <Fuel size={14} /> Trip Slips
+          </button>
+        )}
 
         <button
           type="button"

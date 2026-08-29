@@ -700,13 +700,13 @@ html, body, #root {
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.75);
+  background: rgba(0, 0, 0, 0.8);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 999;
+  z-index: 9999;
   padding: 24px;
   animation: fadeIn 0.15s ease;
 }
@@ -717,17 +717,19 @@ html, body, #root {
 }
 
 .modal-content {
-  background: var(--bg-panel);
-  border: 1px solid var(--border-subtle);
+  background: #0f172a;
+  border: 1px solid #334155;
   border-radius: var(--radius-lg);
   width: 100%;
   max-width: 820px;
   max-height: 88vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.75);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85);
   overflow: hidden;
   animation: modalPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  z-index: 10000;
 }
 
 @keyframes modalPop {

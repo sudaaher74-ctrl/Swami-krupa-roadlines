@@ -395,4 +395,10 @@
     border-bottom: none !important;
     outline: none !important;
   }
+
+  .trip-slip-voucher-paper {
+    box-shadow: none !important;
+    border: 2px solid #000000 !important;
+    max-width: 100% !important;
+  }
 }

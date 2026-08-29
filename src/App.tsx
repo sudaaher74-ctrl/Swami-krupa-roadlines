@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import type { InvoiceData, CustomerRecord, VehicleRecord } from './types/invoice';
-import { defaultInvoice, createNewInvoice } from './utils/defaultData';
+import type { InvoiceData, CustomerRecord, VehicleRecord, TripSlip } from './types/invoice';
+import { defaultInvoice, createNewInvoice, defaultCompanyProfile } from './utils/defaultData';
 import { calculateNextBillNumber, recordBillSequenceNumber } from './utils/billNumberUtils';
 import { HeaderBar } from './components/HeaderBar';
 import { InvoiceDocument } from './components/InvoiceDocument';
 import { InvoiceEditor } from './components/InvoiceEditor';
 import { SavedInvoicesModal } from './components/SavedInvoicesModal';
 import { DirectoryModal } from './components/DirectoryModal';
+import { TripSlipModal } from './components/TripSlipModal';
 import { downloadInvoicePDF, openWhatsAppShare } from './utils/exportUtils';
 import { CheckCircle2 } from 'lucide-react';
 import './styles/app.css';
@@ -16,6 +17,32 @@ const LOCAL_STORAGE_KEY_CUSTOMERS = 'swami_krupa_saved_customers_v1';
 const LOCAL_STORAGE_KEY_VEHICLES = 'swami_krupa_saved_vehicles_v1';
 const LOCAL_STORAGE_KEY_COMPANY = 'swami_krupa_company_profile_v1';
 const LOCAL_STORAGE_KEY_BANK = 'swami_krupa_bank_details_v1';
+const LOCAL_STORAGE_KEY_TRIP_SLIPS = 'swami_krupa_trip_slips_v1';
+
+const defaultTripSlipsList: TripSlip[] = [
+  {
+    id: 'slip-1',
+    slipNo: 'SLIP-101',
+    date: '28-08-2026',
+    vehicleNo: 'MH46DL7778',
+    driverName: 'RAMESH SINGH',
+    driverPhone: '9876543210',
+    fromLocation: 'NHAVA SHEVA',
+    toLocation: 'VASAI',
+    containerNo: 'BEAU5560140 (40FT)',
+    dieselLiters: 65,
+    dieselRate: 92.5,
+    dieselAmount: 6012,
+    dieselPumpName: 'HPCL PANVEL',
+    driverAdvance: 2000,
+    tollCharges: 650,
+    otherExpenses: 0,
+    remarks: 'Trip advance & diesel voucher',
+    totalExpense: 8662,
+    company: defaultCompanyProfile,
+    createdAt: new Date().toISOString(),
+  }
+];
 
 const defaultCustomersList: CustomerRecord[] = [
   { id: 'c-1', name: 'ADNISHA TRANSPORT', phone: '9987010013', address: 'Navi Mumbai' },
@@ -68,9 +95,21 @@ export const App: React.FC = () => {
     return defaultVehiclesList;
   });
 
+  // Trip Slips Master
+  const [tripSlips, setTripSlips] = useState<TripSlip[]>(() => {
+    try {
+      const stored = localStorage.getItem(LOCAL_STORAGE_KEY_TRIP_SLIPS);
+      if (stored) return JSON.parse(stored);
+    } catch (e) {
+      console.error('Error loading trip slips', e);
+    }
+    return defaultTripSlipsList;
+  });
+
   // UI state
   const [isSavedModalOpen, setIsSavedModalOpen] = useState(false);
   const [isDirectoryModalOpen, setIsDirectoryModalOpen] = useState(false);
+  const [isTripSlipModalOpen, setIsTripSlipModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'split' | 'preview' | 'editor'>('split');
   const [zoom, setZoom] = useState<number>(0.92);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -100,6 +139,14 @@ export const App: React.FC = () => {
       console.error(e);
     }
   }, [vehicles]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(LOCAL_STORAGE_KEY_TRIP_SLIPS, JSON.stringify(tripSlips));
+    } catch (e) {
+      console.error(e);
+    }
+  }, [tripSlips]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -322,6 +369,64 @@ export const App: React.FC = () => {
     showToast('Invoice deleted from records');
   };
 
+  const handleUpdateInvoicePayment = (
+    invoiceId: string,
+    status: 'PAID' | 'UNPAID' | 'PARTIAL',
+    amountReceived?: number,
+    paymentDate?: string,
+    paymentMode?: string,
+    paymentNotes?: string
+  ) => {
+    const updatedList = savedInvoices.map((inv) => {
+      if (inv.id === invoiceId) {
+        return {
+          ...inv,
+          paymentStatus: status,
+          amountReceived: amountReceived !== undefined ? amountReceived : inv.amountReceived,
+          paymentDate: paymentDate || inv.paymentDate,
+          paymentMode: paymentMode || inv.paymentMode,
+          paymentNotes: paymentNotes !== undefined ? paymentNotes : inv.paymentNotes,
+          updatedAt: new Date().toISOString(),
+        };
+      }
+      return inv;
+    });
+
+    setSavedInvoices(updatedList);
+
+    if (currentInvoice.id === invoiceId) {
+      setCurrentInvoice({
+        ...currentInvoice,
+        paymentStatus: status,
+        amountReceived: amountReceived !== undefined ? amountReceived : currentInvoice.amountReceived,
+        paymentDate: paymentDate || currentInvoice.paymentDate,
+        paymentMode: paymentMode || currentInvoice.paymentMode,
+        paymentNotes: paymentNotes !== undefined ? paymentNotes : currentInvoice.paymentNotes,
+      });
+    }
+
+    showToast(`Payment updated: ${status}`);
+  };
+
+  // Trip Slips handlers
+  const handleSaveTripSlip = (slip: TripSlip) => {
+    const existingIndex = tripSlips.findIndex(s => s.id === slip.id);
+    if (existingIndex >= 0) {
+      const copy = [...tripSlips];
+      copy[existingIndex] = slip;
+      setTripSlips(copy);
+      showToast(`Updated ${slip.slipNo} for ${slip.vehicleNo}`);
+    } else {
+      setTripSlips([slip, ...tripSlips]);
+      showToast(`Saved ${slip.slipNo} for ${slip.vehicleNo}`);
+    }
+  };
+
+  const handleDeleteTripSlip = (id: string) => {
+    setTripSlips(tripSlips.filter(s => s.id !== id));
+    showToast('Trip slip deleted from records');
+  };
+
   const handleExportAll = () => {
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(savedInvoices, null, 2));
     const downloadAnchor = document.createElement('a');
@@ -372,6 +477,7 @@ export const App: React.FC = () => {
         onWhatsAppShare={handleWhatsAppShare}
         onOpenSavedModal={() => setIsSavedModalOpen(true)}
         onOpenDirectoryModal={() => setIsDirectoryModalOpen(true)}
+        onOpenTripSlipModal={() => setIsTripSlipModalOpen(true)}
         savedCount={savedInvoices.length}
         zoom={zoom}
         onZoomIn={handleZoomIn}
@@ -438,6 +544,7 @@ export const App: React.FC = () => {
         onDeleteInvoice={handleDeleteInvoice}
         onExportAll={handleExportAll}
         onImportBackup={handleImportBackup}
+        onUpdateInvoicePayment={handleUpdateInvoicePayment}
       />
 
       {/* Directory Modal */}
@@ -453,6 +560,17 @@ export const App: React.FC = () => {
         onUpdateVehicle={handleUpdateVehicle}
         onDeleteVehicle={handleDeleteVehicle}
         onSelectCustomer={handleSelectCustomerFromDir}
+      />
+
+      {/* Trip Slip Modal */}
+      <TripSlipModal
+        isOpen={isTripSlipModalOpen}
+        onClose={() => setIsTripSlipModalOpen(false)}
+        tripSlips={tripSlips}
+        onSaveTripSlip={handleSaveTripSlip}
+        onDeleteTripSlip={handleDeleteTripSlip}
+        vehicles={vehicles}
+        company={currentInvoice.company}
       />
     </div>
   );

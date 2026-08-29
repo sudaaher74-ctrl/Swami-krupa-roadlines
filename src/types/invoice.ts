@@ -47,6 +47,11 @@ export interface InvoiceData {
   advanceDeduction: number; // e.g. 0.00
   customAmountInWords?: string;
   customGstPayableBy?: string;
+  paymentStatus?: 'PAID' | 'UNPAID' | 'PARTIAL';
+  amountReceived?: number;
+  paymentDate?: string;
+  paymentMode?: 'BANK_TRANSFER' | 'UPI' | 'CHEQUE' | 'CASH' | 'OTHER' | string;
+  paymentNotes?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -65,4 +70,27 @@ export interface VehicleRecord {
   driverName?: string;
   driverPhone?: string;
   type?: string;
+}
+
+export interface TripSlip {
+  id: string;
+  slipNo: string;
+  date: string;
+  vehicleNo: string;
+  driverName: string;
+  driverPhone?: string;
+  fromLocation: string;
+  toLocation: string;
+  containerNo?: string;
+  dieselLiters?: number | '';
+  dieselRate?: number | '';
+  dieselAmount?: number | '';
+  dieselPumpName?: string;
+  driverAdvance?: number | '';
+  tollCharges?: number | '';
+  otherExpenses?: number | '';
+  remarks?: string;
+  totalExpense: number;
+  company: CompanyProfile;
+  createdAt: string;
 }
