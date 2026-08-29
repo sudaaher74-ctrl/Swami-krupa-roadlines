@@ -63,7 +63,7 @@ export function generateWhatsAppMessage(invoice: InvoiceData): string {
 📄 *Bill No:* ${invoice.billNo}
 📅 *Date:* ${invoice.date}
 🏢 *Party:* ${invoice.clientName || 'ADNISHA TRANSPORT'}
-${invoice.beNo ? `📋 *BE No:* ${invoice.beNo} (dt. ${invoice.beDate})\n` : ''}${vehicleList ? `🚚 *Vehicle(s):* ${vehicleList}\n` : ''}
+${invoice.beNo ? `📋 *${invoice.refDocType || 'BE No'}:* ${invoice.beNo} (dt. ${invoice.beDate})\n` : ''}${vehicleList ? `🚚 *Vehicle(s):* ${vehicleList}\n` : ''}
 *Particulars Breakdown:*
 ${particularsSummary}
 ━━━━━━━━━━━━━━━━━━━━

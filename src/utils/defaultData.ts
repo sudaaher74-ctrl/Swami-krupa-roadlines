@@ -33,6 +33,7 @@ export const defaultInvoice: InvoiceData = {
   date: '22-08-2026',
   beNo: '3188241',
   beDate: '17/08/2026',
+  refDocType: 'BE NO',
   items: [
     {
       id: 'row-1',
@@ -81,6 +82,7 @@ export function createNewInvoice(billNumber?: string): InvoiceData {
     date: formattedDate,
     beNo: '',
     beDate: formattedDate,
+    refDocType: 'BE NO',
     items: [
       {
         id: 'row-' + Date.now(),

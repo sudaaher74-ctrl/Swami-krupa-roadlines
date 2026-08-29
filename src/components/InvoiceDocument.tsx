@@ -154,10 +154,30 @@ export const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
             </div>
           </div>
 
-          {/* Row 2: BE NO & DATE */}
+          {/* Row 2: BE NO / INVOICE NO & DATE */}
           <div className="invoice-meta-row">
             <div className="invoice-meta-left">
-              BE NO :-&nbsp;
+              {isEditableInline ? (
+                <span
+                  className="doc-ref-badge-inline"
+                  title="Click to switch between BE NO and INVOICE NO"
+                  onClick={() => {
+                    const next = (invoice.refDocType || 'BE NO') === 'BE NO' ? 'INVOICE NO' : 'BE NO';
+                    handleTextChange('refDocType', next);
+                  }}
+                  style={{
+                    cursor: 'pointer',
+                    userSelect: 'none',
+                    borderBottom: '1px dotted #2563eb',
+                    fontWeight: 700,
+                  }}
+                >
+                  {invoice.refDocType || 'BE NO'}
+                </span>
+              ) : (
+                <span>{invoice.refDocType || 'BE NO'}</span>
+              )}
+              &nbsp;:-&nbsp;
               <span
                 contentEditable={isEditableInline}
                 suppressContentEditableWarning

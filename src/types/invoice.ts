@@ -40,6 +40,7 @@ export interface InvoiceData {
   date: string; // e.g. "22-08-2026"
   beNo: string; // e.g. "3188241"
   beDate: string; // e.g. "17/08/2026"
+  refDocType?: 'BE NO' | 'INVOICE NO' | string; // e.g. "BE NO" or "INVOICE NO"
   items: LineItem[];
   company: CompanyProfile;
   bank: BankDetails;

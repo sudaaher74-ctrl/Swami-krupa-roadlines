@@ -802,3 +802,94 @@ html, body, #root {
   from { opacity: 0; transform: translateY(14px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* Reference Document Type Selector */
+.ref-doc-selector-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  width: 100%;
+}
+
+.ref-doc-option-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-app);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.ref-doc-option-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(96, 165, 250, 0.4);
+  transform: translateY(-1px);
+}
+
+.ref-doc-option-btn.active {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.2) 0%, rgba(30, 58, 138, 0.35) 100%);
+  border-color: #3b82f6;
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.ref-radio-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid #64748b;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.ref-doc-option-btn.active .ref-radio-dot {
+  border-color: #38bdf8;
+  background: #38bdf8;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
+}
+
+.ref-doc-option-btn.active .ref-radio-dot::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background: #0f172a;
+  border-radius: 50%;
+}
+
+.ref-option-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ref-option-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #f1f5f9;
+  letter-spacing: 0.3px;
+}
+
+.ref-doc-option-btn.active .ref-option-title {
+  color: #60a5fa;
+}
+
+.ref-option-desc {
+  font-size: 11px;
+  color: #94a3b8;
+  line-height: 1.2;
+}
+
+.doc-ref-badge-inline:hover {
+  background: rgba(59, 130, 246, 0.12);
+  border-radius: 2px;
+  outline: 1px dashed #2563eb;
+}
+

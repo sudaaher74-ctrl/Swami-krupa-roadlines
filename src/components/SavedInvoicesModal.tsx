@@ -140,7 +140,7 @@ export const SavedInvoicesModal: React.FC<SavedInvoicesModalProps> = ({
                     <div className="card-details-list" style={{ fontSize: '12px', color: '#94a3b8', display: 'flex', flexDirection: 'column', gap: '3px', margin: '6px 0' }}>
                       {inv.beNo && (
                         <div className="card-detail-item">
-                          <span className="lbl" style={{ color: '#cbd5e1', fontWeight: 600 }}>BE NO:</span>
+                          <span className="lbl" style={{ color: '#cbd5e1', fontWeight: 600 }}>{inv.refDocType || 'BE NO'}:</span>
                           <span className="val">{inv.beNo} (dt.{inv.beDate})</span>
                         </div>
                       )}

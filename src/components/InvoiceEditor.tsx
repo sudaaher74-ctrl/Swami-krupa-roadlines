@@ -470,18 +470,60 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
               />
             </div>
 
+            {/* Reference Document Type Selection: BE NO vs INVOICE NO */}
+            <div className="form-group col-12" style={{ marginBottom: '6px' }}>
+              <div className="flex-between" style={{ marginBottom: '6px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: '#93c5fd', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Document Reference Type *
+                </label>
+                <span style={{ fontSize: '11px', color: '#94a3b8' }}>
+                  Selected on Bill: <strong style={{ color: '#38bdf8' }}>{invoice.refDocType || 'BE NO'}</strong>
+                </span>
+              </div>
+              
+              <div className="ref-doc-selector-group">
+                <button
+                  type="button"
+                  className={`ref-doc-option-btn ${(invoice.refDocType || 'BE NO') === 'BE NO' ? 'active' : ''}`}
+                  onClick={() => updateInvoice('refDocType', 'BE NO')}
+                >
+                  <span className="ref-radio-dot"></span>
+                  <div className="ref-option-text">
+                    <span className="ref-option-title">BE NO</span>
+                    <span className="ref-option-desc">Bill of Entry / Import Reference</span>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  className={`ref-doc-option-btn ${(invoice.refDocType || 'BE NO') === 'INVOICE NO' ? 'active' : ''}`}
+                  onClick={() => updateInvoice('refDocType', 'INVOICE NO')}
+                >
+                  <span className="ref-radio-dot"></span>
+                  <div className="ref-option-text">
+                    <span className="ref-option-title">INVOICE NO</span>
+                    <span className="ref-option-desc">Party / Commercial Invoice No</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+
             <div className="form-group col-6">
-              <label>BE No (Bill of Entry / Booking No)</label>
+              <label>
+                {(invoice.refDocType || 'BE NO') === 'INVOICE NO' ? 'Invoice No (Party / Ref No)' : 'BE No (Bill of Entry / Booking No)'}
+              </label>
               <input
                 type="text"
                 value={invoice.beNo}
-                placeholder="3188241"
+                placeholder={(invoice.refDocType || 'BE NO') === 'INVOICE NO' ? 'SSEPL/1741/2627' : '3188241'}
                 onChange={(e) => updateInvoice('beNo', e.target.value)}
               />
             </div>
 
             <div className="form-group col-6">
-              <label>BE Date</label>
+              <label>
+                {(invoice.refDocType || 'BE NO') === 'INVOICE NO' ? 'Invoice Date (Party Ref dt.)' : 'BE Date'}
+              </label>
               <input
                 type="text"
                 value={invoice.beDate}
