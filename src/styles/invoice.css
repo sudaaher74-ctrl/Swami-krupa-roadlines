@@ -26,7 +26,7 @@
   padding: 10mm 12mm 12mm 12mm;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
   box-sizing: border-box;
-  font-family: 'Times New Roman', 'Liberation Serif', Times, serif, 'Tinos';
+  font-family: 'Tinos', Georgia, 'Times New Roman', serif;
   color: #000000;
   line-height: 1.25;
   position: relative;
@@ -67,7 +67,7 @@
   margin: 0 0 2px 0;
   line-height: 1.1;
   text-transform: uppercase;
-  font-family: 'Times New Roman', 'Liberation Serif', Times, serif;
+  font-family: 'Tinos', Georgia, 'Times New Roman', serif;
 }
 
 .invoice-company-tagline {

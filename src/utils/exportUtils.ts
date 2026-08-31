@@ -1,10 +1,10 @@
-import html2canvas from 'html2canvas';
+import { toPng } from 'html-to-image';
 import { jsPDF } from 'jspdf';
 import type { InvoiceData } from '../types/invoice';
 import { formatCurrency } from './numberToWords';
 
 /**
- * Captures the invoice paper element and downloads as high-resolution A4 PDF
+ * Captures the invoice paper element and downloads as high-resolution A4 PDF using native HTML-to-Image rendering
  */
 export async function downloadInvoicePDF(invoice: InvoiceData): Promise<void> {
   const element = document.getElementById('invoice-printable-doc');
@@ -17,33 +17,19 @@ export async function downloadInvoicePDF(invoice: InvoiceData): Promise<void> {
     await document.fonts.ready;
   }
 
-  // Temporarily ensure high resolution with pristine styling
-  const canvas = await html2canvas(element, {
-    scale: 2.5, // 2.5x for crisp text and lines
-    useCORS: true,
-    logging: false,
+  // Render using native browser engine (SVG ForeignObject) for flawless typography and zero space collapse
+  const imgData = await toPng(element, {
+    quality: 1.0,
+    pixelRatio: 2.5,
     backgroundColor: '#ffffff',
-    windowWidth: 1200,
-    onclone: (clonedDoc) => {
-      const el = clonedDoc.getElementById('invoice-printable-doc');
-      if (el) {
-        el.style.transform = 'none';
-        el.style.margin = '0 auto';
-        el.style.boxShadow = 'none';
-        // Reset any letter-spacing drift
-        const allText = el.querySelectorAll('*');
-        allText.forEach((node) => {
-          const htmlNode = node as HTMLElement;
-          if (htmlNode.style) {
-            htmlNode.style.fontKerning = 'normal';
-          }
-        });
-      }
-    }
+    cacheBust: true,
+    style: {
+      transform: 'none',
+      margin: '0 auto',
+      boxShadow: 'none',
+    },
   });
 
-  const imgData = canvas.toDataURL('image/png');
-  
   // A4 dimensions in mm: 210 x 297
   const pdf = new jsPDF({
     orientation: 'portrait',
@@ -52,9 +38,15 @@ export async function downloadInvoicePDF(invoice: InvoiceData): Promise<void> {
   });
 
   const pdfWidth = pdf.internal.pageSize.getWidth();
-  const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+  const elementWidth = element.offsetWidth || 794;
+  const elementHeight = element.offsetHeight || 1123;
+  const pdfHeight = (elementHeight * pdfWidth) / elementWidth;
 
   pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
+
+  if (typeof window !== 'undefined') {
+    (window as any).__lastPdfDataUrl = imgData;
+  }
 
   const cleanBillNo = (invoice.billNo || 'invoice').replace(/[/\\?%*:|"<>]/g, '_').trim();
   const filename = `Invoice_${cleanBillNo}_${invoice.clientName || 'Transport'}.pdf`;
@@ -210,7 +202,7 @@ export function exportInvoicesToCSV(invoices: InvoiceData[]): void {
 }
 
 /**
- * Captures the trip slip element and downloads as printable PDF
+ * Captures the trip slip element and downloads as printable PDF using HTML-to-Image
  */
 export async function downloadTripSlipPDF(slipElementId: string, slipNo: string, vehicleNo: string): Promise<void> {
   const element = document.getElementById(slipElementId);
@@ -218,14 +210,22 @@ export async function downloadTripSlipPDF(slipElementId: string, slipNo: string,
     throw new Error('Trip slip element not found');
   }
 
-  const canvas = await html2canvas(element, {
-    scale: 2.5,
-    useCORS: true,
-    logging: false,
+  if (document.fonts && document.fonts.ready) {
+    await document.fonts.ready;
+  }
+
+  const imgData = await toPng(element, {
+    quality: 1.0,
+    pixelRatio: 2.5,
     backgroundColor: '#ffffff',
+    cacheBust: true,
+    style: {
+      transform: 'none',
+      margin: '0 auto',
+      boxShadow: 'none',
+    },
   });
 
-  const imgData = canvas.toDataURL('image/png');
   const pdf = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -233,7 +233,9 @@ export async function downloadTripSlipPDF(slipElementId: string, slipNo: string,
   });
 
   const pdfWidth = pdf.internal.pageSize.getWidth();
-  const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+  const elementWidth = element.offsetWidth || 500;
+  const elementHeight = element.offsetHeight || 700;
+  const pdfHeight = (elementHeight * pdfWidth) / elementWidth;
 
   pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
 
@@ -241,4 +243,3 @@ export async function downloadTripSlipPDF(slipElementId: string, slipNo: string,
   const filename = `TripSlip_${cleanSlipNo}_${vehicleNo || 'Fleet'}.pdf`;
   pdf.save(filename);
 }
-
