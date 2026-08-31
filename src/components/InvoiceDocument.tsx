@@ -88,7 +88,8 @@ export const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
           </div>
 
           <div className="invoice-contact-line">
-            Email- <span
+            <span>Email: </span>
+            <span
               className="email-link"
               contentEditable={isEditableInline}
               suppressContentEditableWarning
@@ -96,13 +97,14 @@ export const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
             >
               {company.email}
             </span>
-            &nbsp; MOB :-
+            <span className="contact-divider"> &nbsp;|&nbsp; </span>
+            <span>MOB : </span>
             <span
               contentEditable={isEditableInline}
               suppressContentEditableWarning
               onBlur={(e) => handleTextChange('company.mobiles', e.currentTarget.innerText)}
             >
-              {company.mobiles}.
+              {company.mobiles}
             </span>
           </div>
 
@@ -112,7 +114,7 @@ export const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
             suppressContentEditableWarning
             onBlur={(e) => handleTextChange('company.panNo', e.currentTarget.innerText)}
           >
-            PAN NO-{company.panNo}.
+            PAN NO - {company.panNo}
           </div>
         </div>
 
@@ -131,8 +133,9 @@ export const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
           {/* Row 1: MS & BILL NO */}
           <div className="invoice-meta-row">
             <div className="invoice-meta-left">
-              MS :&nbsp;
+              <span className="meta-label">MS : </span>
               <span
+                className="meta-val-client"
                 contentEditable={isEditableInline}
                 suppressContentEditableWarning
                 onBlur={(e) => handleTextChange('clientName', e.currentTarget.innerText)}
@@ -142,8 +145,9 @@ export const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
               </span>
             </div>
             <div className="invoice-meta-right">
-              BILL NO :-&nbsp;
+              <span className="meta-label">BILL NO : </span>
               <span
+                className="meta-val-billno"
                 contentEditable={isEditableInline}
                 suppressContentEditableWarning
                 onBlur={(e) => handleTextChange('billNo', e.currentTarget.innerText)}
@@ -177,7 +181,7 @@ export const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
               ) : (
                 <span>{invoice.refDocType || 'BE NO'}</span>
               )}
-              &nbsp;:-&nbsp;
+              <span> : </span>
               <span
                 contentEditable={isEditableInline}
                 suppressContentEditableWarning
@@ -186,7 +190,7 @@ export const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
               >
                 {invoice.beNo || '3188241'}
               </span>
-              &nbsp;dt.
+              <span className="meta-dt-label"> dt. </span>
               <span
                 contentEditable={isEditableInline}
                 suppressContentEditableWarning
@@ -197,8 +201,9 @@ export const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
               </span>
             </div>
             <div className="invoice-meta-right">
-              DATE :-&nbsp;&nbsp;&nbsp;
+              <span className="meta-label">DATE : </span>
               <span
+                className="meta-val-date"
                 contentEditable={isEditableInline}
                 suppressContentEditableWarning
                 onBlur={(e) => handleTextChange('date', e.currentTarget.innerText)}
@@ -266,28 +271,37 @@ export const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
           {/* Left: Bank Details */}
           <div className="invoice-bank-details">
             <div className="invoice-bank-line">
-              BANK NAME : {bank.bankName}
+              <span className="bank-label">BANK NAME : </span>
+              <span className="bank-val">{bank.bankName}</span>
             </div>
             <div className="invoice-bank-line">
-              BRANCH : {bank.branch}
+              <span className="bank-label">BRANCH : </span>
+              <span className="bank-val">{bank.branch}</span>
             </div>
-            <div className="invoice-bank-line">
-              ACCOUNT NO :{bank.accountNo}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;IFSC CODE :{bank.ifscCode}
+            <div className="invoice-bank-line bank-acc-ifsc-row">
+              <div>
+                <span className="bank-label">ACCOUNT NO : </span>
+                <span className="bank-val">{bank.accountNo}</span>
+              </div>
+              <div>
+                <span className="bank-label">IFSC CODE : </span>
+                <span className="bank-val">{bank.ifscCode}</span>
+              </div>
             </div>
           </div>
 
           {/* Right: Totals Summary */}
           <div className="invoice-amounts-summary">
             <div className="invoice-amount-row">
-              <span className="invoice-amount-label">Bill Total :-</span>
+              <span className="invoice-amount-label">Bill Total : </span>
               <span className="invoice-amount-val">{formatCurrency(billTotal)}</span>
             </div>
             <div className="invoice-amount-row">
-              <span className="invoice-amount-label">Advance :-</span>
+              <span className="invoice-amount-label">Advance : </span>
               <span className="invoice-amount-val">{formatCurrency(advanceAmount)}</span>
             </div>
             <div className="invoice-amount-row">
-              <span className="invoice-amount-label">Balance :-</span>
+              <span className="invoice-amount-label">Balance : </span>
               <span className="invoice-amount-val">{formatCurrency(balanceAmount)}</span>
             </div>
           </div>
@@ -295,22 +309,24 @@ export const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
 
         {/* Rupess in Words */}
         <div className="invoice-words-row">
-          Rupess : {amountInWords}
+          <span className="words-label">RUPEES : </span>
+          <span className="words-val">{amountInWords}</span>
         </div>
 
         {/* GST Tax Payable Row */}
         <div className="invoice-gst-row">
-          GST TAX PAYABLE BY {gstPayableParty}
+          <span className="gst-label">GST TAX PAYABLE BY </span>
+          <span className="gst-val">{gstPayableParty}</span>
         </div>
 
         {/* Terms & Conditions + Signature */}
         <div className="invoice-terms-signature-section">
           {/* Left: Terms */}
           <div className="invoice-terms-left">
-            <div className="invoice-eoe">E.&.O.E</div>
+            <div className="invoice-eoe">E.&.O.E.</div>
             {company.terms && company.terms.map((term, tIdx) => (
               <div key={tIdx} className="invoice-term-item">
-                {tIdx + 1}. {term}
+                {term.startsWith(`${tIdx + 1}.`) ? term : `${tIdx + 1}. ${term}`}
               </div>
             ))}
           </div>

@@ -5,8 +5,8 @@ export const defaultCompanyProfile: CompanyProfile = {
   jurisdiction: 'Subject To Navi Mumbai Jurisdiction',
   companyName: 'SWAMI KRUPA ROADLINES',
   tagline: 'FLEET OWNERS & TRANSPORT CONTRACTORS',
-  addressLine1: 'SHOP NO 5 GROUND FLOOR MAHESHWER VILLA PLOT NO 30 SECTOR 5A NEW PANVEL',
-  addressLine2: 'NAVI MUMBAI-410206',
+  addressLine1: 'SHOP NO 5, GROUND FLOOR, MAHESHWAR VILLA, PLOT NO 30, SECTOR 5A, NEW PANVEL',
+  addressLine2: 'NAVI MUMBAI - 410206',
   email: 'Swamikruparoadlines@gmail.com',
   mobiles: '9987010013 / 8888522803',
   panNo: 'CAYPG4986P',
@@ -14,14 +14,14 @@ export const defaultCompanyProfile: CompanyProfile = {
   proprietorText: 'Proprietor',
   terms: [
     'Interest will be charged @ 18% if the bill is not Paid 5 Days after presentation.',
-    'We are not Responsible for Leakage Breakage Damage, Thief & Fire',
+    'We are not Responsible for Leakage, Breakage, Damage, Theft & Fire.',
     'We do not own more than 10 vehicles.'
   ]
 };
 
 export const defaultBankDetails: BankDetails = {
   bankName: 'GS MAHANAGER CO BANK',
-  branch: 'KHANDACONLNY',
+  branch: 'KHANDA COLONY',
   accountNo: '032011200000548',
   ifscCode: 'MCBL0960032'
 };

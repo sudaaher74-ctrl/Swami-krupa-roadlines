@@ -12,12 +12,34 @@ export async function downloadInvoicePDF(invoice: InvoiceData): Promise<void> {
     throw new Error('Invoice document element not found');
   }
 
-  // Temporarily ensure high resolution
+  // Ensure fonts are fully loaded before capturing
+  if (document.fonts && document.fonts.ready) {
+    await document.fonts.ready;
+  }
+
+  // Temporarily ensure high resolution with pristine styling
   const canvas = await html2canvas(element, {
     scale: 2.5, // 2.5x for crisp text and lines
     useCORS: true,
     logging: false,
     backgroundColor: '#ffffff',
+    windowWidth: 1200,
+    onclone: (clonedDoc) => {
+      const el = clonedDoc.getElementById('invoice-printable-doc');
+      if (el) {
+        el.style.transform = 'none';
+        el.style.margin = '0 auto';
+        el.style.boxShadow = 'none';
+        // Reset any letter-spacing drift
+        const allText = el.querySelectorAll('*');
+        allText.forEach((node) => {
+          const htmlNode = node as HTMLElement;
+          if (htmlNode.style) {
+            htmlNode.style.fontKerning = 'normal';
+          }
+        });
+      }
+    }
   });
 
   const imgData = canvas.toDataURL('image/png');

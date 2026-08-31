@@ -26,7 +26,7 @@
   padding: 10mm 12mm 12mm 12mm;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
   box-sizing: border-box;
-  font-family: 'Times New Roman', Times, serif, 'Tinos';
+  font-family: 'Times New Roman', 'Liberation Serif', Times, serif, 'Tinos';
   color: #000000;
   line-height: 1.25;
   position: relative;
@@ -48,8 +48,8 @@
   text-align: center;
   font-size: 13px;
   font-weight: bold;
-  padding: 3px 0 2px 0;
-  letter-spacing: 0.2px;
+  padding: 4px 0 3px 0;
+  letter-spacing: normal;
   color: #000000;
 }
 
@@ -61,38 +61,45 @@
 
 .invoice-company-title {
   color: var(--invoice-red);
-  font-size: 38px;
+  font-size: 36px;
   font-weight: 900;
-  letter-spacing: 1.5px;
+  letter-spacing: 0.5px;
   margin: 0 0 2px 0;
-  line-height: 1.05;
+  line-height: 1.1;
   text-transform: uppercase;
-  font-family: 'Times New Roman', Times, serif;
+  font-family: 'Times New Roman', 'Liberation Serif', Times, serif;
 }
 
 .invoice-company-tagline {
-  font-size: 17px;
+  font-size: 16px;
   font-weight: bold;
   text-decoration: underline;
   text-underline-offset: 3px;
   text-decoration-thickness: 1.5px;
-  margin: 2px 0 4px 0;
-  letter-spacing: 0.6px;
+  margin: 2px 0 5px 0;
+  letter-spacing: normal;
   text-transform: uppercase;
 }
 
 .invoice-address-line {
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: bold;
-  margin: 2px 0;
+  margin: 3px 0;
   text-transform: uppercase;
-  line-height: 1.25;
+  line-height: 1.3;
+  letter-spacing: normal;
 }
 
 .invoice-contact-line {
   font-size: 13.5px;
   font-weight: bold;
-  margin: 3px 0 1px 0;
+  margin: 4px 0 2px 0;
+  letter-spacing: normal;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
 }
 
 .invoice-contact-line .email-link {
@@ -100,11 +107,15 @@
   color: #000000;
 }
 
+.invoice-contact-line .contact-divider {
+  color: #444;
+}
+
 .invoice-pan-line {
   font-size: 13.5px;
   font-weight: bold;
-  margin: 2px 0 0 0;
-  letter-spacing: 0.5px;
+  margin: 3px 0 0 0;
+  letter-spacing: normal;
 }
 
 /* TAX INVOICE Bar */
@@ -112,17 +123,17 @@
   border-top: 2px solid #000000;
   border-bottom: 2px solid #000000;
   text-align: center;
-  padding: 4px 0;
+  padding: 5px 0;
   font-size: 18px;
   font-weight: 900;
-  letter-spacing: 1px;
+  letter-spacing: normal;
   text-transform: uppercase;
 }
 
 /* Meta Data Grid (MS, Bill No, Date, BE No) */
 .invoice-meta-section {
   border-bottom: 2px solid #000000;
-  padding: 6px 10px;
+  padding: 6px 12px;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -132,18 +143,33 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 14.5px;
+  font-size: 14px;
   font-weight: bold;
 }
 
 .invoice-meta-left {
   flex: 1;
   text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow: hidden;
 }
 
 .invoice-meta-right {
   text-align: left;
-  min-width: 200px;
+  min-width: 210px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.meta-label {
+  white-space: nowrap;
+}
+
+.meta-dt-label {
+  margin: 0 4px;
 }
 
 /* Table Area */
@@ -152,6 +178,7 @@
   flex-direction: column;
   flex-grow: 1;
   position: relative;
+  overflow: hidden;
 }
 
 .invoice-table {
@@ -163,12 +190,15 @@
 .invoice-table th {
   border-bottom: 2px solid #000000;
   border-right: 1.5px solid #000000;
-  font-size: 13.5px;
+  font-size: 12.5px;
   font-weight: bold;
-  padding: 4px 2px;
+  padding: 5px 2px;
   text-align: center;
   background: transparent;
   line-height: 1.15;
+  letter-spacing: normal;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 .invoice-table th:last-child {
@@ -176,27 +206,30 @@
 }
 
 .invoice-table th.th-particulars {
-  letter-spacing: 2px;
+  letter-spacing: 0.5px;
 }
 
-/* Column Widths */
-.col-sn { width: 6%; }
-.col-date { width: 10%; }
-.col-vehicle { width: 13%; }
-.col-container { width: 15%; }
-.col-particulars { width: 32%; }
-.col-weight { width: 8%; }
-.col-advance { width: 8%; }
-.col-amount { width: 11%; }
+/* Optimized Column Widths to prevent any text collisions */
+.col-sn { width: 5%; }
+.col-date { width: 9.5%; }
+.col-vehicle { width: 14%; }
+.col-container { width: 15.5%; }
+.col-particulars { width: 29.5%; }
+.col-weight { width: 8.5%; }
+.col-advance { width: 8.5%; }
+.col-amount { width: 9.5%; }
 
 /* Table Body Rows */
 .invoice-table td {
   border-right: 1.5px solid #000000;
-  padding: 4px 5px;
-  font-size: 14px;
+  padding: 4px 3px;
+  font-size: 13px;
   font-weight: bold;
   vertical-align: top;
   line-height: 1.25;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  box-sizing: border-box;
 }
 
 .invoice-table td:last-child {
@@ -209,6 +242,7 @@
 
 .invoice-table td.text-right {
   text-align: right;
+  padding-right: 5px;
 }
 
 .invoice-table td.text-left {
@@ -218,6 +252,7 @@
 /* Container text with line break */
 .container-cell {
   white-space: pre-line;
+  line-height: 1.2;
 }
 
 /* Filler area that forces table grid lines to stretch to bottom */
@@ -237,17 +272,25 @@
 
 .invoice-bank-details {
   border-right: 2px solid #000000;
-  padding: 4px 8px;
+  padding: 6px 10px;
   font-size: 13px;
   font-weight: bold;
   display: flex;
   flex-direction: column;
   justify-content: space-around;
-  gap: 3px;
+  gap: 4px;
 }
 
 .invoice-bank-line {
-  line-height: 1.2;
+  line-height: 1.25;
+}
+
+.bank-acc-ifsc-row {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
 }
 
 .invoice-amounts-summary {
@@ -259,7 +302,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 3px 8px;
+  padding: 4px 10px;
   font-size: 13.5px;
   font-weight: bold;
   border-bottom: 1.5px solid #000000;
@@ -284,28 +327,30 @@
 .invoice-words-row {
   border-top: 2px solid #000000;
   border-bottom: 1.5px solid #000000;
-  padding: 4px 8px;
+  padding: 5px 10px;
   font-size: 13px;
   font-weight: bold;
   text-transform: uppercase;
+  letter-spacing: normal;
 }
 
 .invoice-gst-row {
   border-bottom: 2px solid #000000;
-  padding: 4px 8px;
+  padding: 5px 10px;
   font-size: 13.5px;
   font-weight: bold;
   text-transform: uppercase;
+  letter-spacing: normal;
 }
 
 /* Legal Terms & Signature */
 .invoice-terms-signature-section {
   display: flex;
   justify-content: space-between;
-  padding: 6px 10px 8px 10px;
+  padding: 6px 12px 10px 12px;
   font-size: 12.5px;
   font-weight: bold;
-  line-height: 1.25;
+  line-height: 1.3;
 }
 
 .invoice-terms-left {
@@ -314,12 +359,14 @@
 }
 
 .invoice-eoe {
-  margin-bottom: 3px;
+  margin-bottom: 4px;
   font-size: 13px;
+  font-weight: bold;
 }
 
 .invoice-term-item {
-  margin-bottom: 2px;
+  margin-bottom: 3px;
+  line-height: 1.25;
 }
 
 .invoice-signature-right {
@@ -338,6 +385,7 @@
   font-weight: 900;
   text-transform: uppercase;
   margin-bottom: 45px;
+  letter-spacing: normal;
 }
 
 .invoice-proprietor {

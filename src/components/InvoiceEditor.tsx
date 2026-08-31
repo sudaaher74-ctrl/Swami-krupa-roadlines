@@ -675,7 +675,7 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
               <input
                 type="text"
                 value={invoice.company.addressLine1}
-                placeholder="SHOP NO 5 GROUND FLOOR MAHESHWER VILLA PLOT NO 30 SECTOR 5A NEW PANVEL"
+                placeholder="SHOP NO 5, GROUND FLOOR, MAHESHWAR VILLA, PLOT NO 30, SECTOR 5A, NEW PANVEL"
                 style={{ textTransform: 'uppercase' }}
                 onChange={(e) => updateInvoice('company.addressLine1', e.target.value.toUpperCase())}
               />
@@ -686,7 +686,7 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
               <input
                 type="text"
                 value={invoice.company.addressLine2}
-                placeholder="NAVI MUMBAI-410206"
+                placeholder="NAVI MUMBAI - 410206"
                 style={{ textTransform: 'uppercase' }}
                 onChange={(e) => updateInvoice('company.addressLine2', e.target.value.toUpperCase())}
               />
@@ -762,7 +762,7 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
               <input
                 type="text"
                 value={invoice.bank.branch}
-                placeholder="KHANDACONLNY"
+                placeholder="KHANDA COLONY"
                 style={{ textTransform: 'uppercase' }}
                 onChange={(e) => updateInvoice('bank.branch', e.target.value.toUpperCase())}
               />
