@@ -26,6 +26,7 @@ interface HeaderBarProps {
   onOpenSavedModal: () => void;
   onOpenDirectoryModal: () => void;
   onOpenTripSlipModal?: () => void;
+  onOpenLRModal?: () => void;
   savedCount: number;
   zoom: number;
   onZoomIn: () => void;
@@ -47,6 +48,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   onOpenSavedModal,
   onOpenDirectoryModal,
   onOpenTripSlipModal,
+  onOpenLRModal,
   savedCount,
   zoom,
   onZoomIn,
@@ -139,6 +141,18 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
         >
           <FolderOpen size={14} /> Bills ({savedCount})
         </button>
+
+        {onOpenLRModal && (
+          <button
+            type="button"
+            className="btn-header btn-header-ghost"
+            onClick={onOpenLRModal}
+            title="Create and print Goods Consignment Note (e-LR / Bilty)"
+            style={{ color: '#60a5fa', borderColor: '#3b82f6' }}
+          >
+            <Sparkles size={14} /> e-LR / Bilty
+          </button>
+        )}
 
         {onOpenTripSlipModal && (
           <button

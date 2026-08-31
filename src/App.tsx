@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import type { InvoiceData, CustomerRecord, VehicleRecord, TripSlip } from './types/invoice';
-import { defaultInvoice, createNewInvoice, defaultCompanyProfile } from './utils/defaultData';
+import type { InvoiceData, CustomerRecord, VehicleRecord, TripSlip, ConsignmentNote } from './types/invoice';
+import { defaultInvoice, createNewInvoice, defaultCompanyProfile, defaultConsignmentNote } from './utils/defaultData';
 import { calculateNextBillNumber, recordBillSequenceNumber } from './utils/billNumberUtils';
 import { HeaderBar } from './components/HeaderBar';
 import { InvoiceDocument } from './components/InvoiceDocument';
@@ -8,6 +8,7 @@ import { InvoiceEditor } from './components/InvoiceEditor';
 import { SavedInvoicesModal } from './components/SavedInvoicesModal';
 import { DirectoryModal } from './components/DirectoryModal';
 import { TripSlipModal } from './components/TripSlipModal';
+import { ConsignmentNoteModal } from './components/ConsignmentNoteModal';
 import { downloadInvoicePDF, openWhatsAppShare } from './utils/exportUtils';
 import { CheckCircle2 } from 'lucide-react';
 import './styles/app.css';
@@ -18,6 +19,7 @@ const LOCAL_STORAGE_KEY_VEHICLES = 'swami_krupa_saved_vehicles_v1';
 const LOCAL_STORAGE_KEY_COMPANY = 'swami_krupa_company_profile_v1';
 const LOCAL_STORAGE_KEY_BANK = 'swami_krupa_bank_details_v1';
 const LOCAL_STORAGE_KEY_TRIP_SLIPS = 'swami_krupa_trip_slips_v1';
+const LOCAL_STORAGE_KEY_LR_NOTES = 'swami_krupa_consignment_notes_v1';
 
 const defaultTripSlipsList: TripSlip[] = [
   {
@@ -106,10 +108,22 @@ export const App: React.FC = () => {
     return defaultTripSlipsList;
   });
 
+  // Consignment Notes (e-LR) Master
+  const [consignmentNotes, setConsignmentNotes] = useState<ConsignmentNote[]>(() => {
+    try {
+      const stored = localStorage.getItem(LOCAL_STORAGE_KEY_LR_NOTES);
+      if (stored) return JSON.parse(stored);
+    } catch (e) {
+      console.error('Error loading LR notes', e);
+    }
+    return [defaultConsignmentNote];
+  });
+
   // UI state
   const [isSavedModalOpen, setIsSavedModalOpen] = useState(false);
   const [isDirectoryModalOpen, setIsDirectoryModalOpen] = useState(false);
   const [isTripSlipModalOpen, setIsTripSlipModalOpen] = useState(false);
+  const [isLRModalOpen, setIsLRModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'split' | 'preview' | 'editor'>('split');
   const [zoom, setZoom] = useState<number>(0.92);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -148,11 +162,67 @@ export const App: React.FC = () => {
     }
   }, [tripSlips]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem(LOCAL_STORAGE_KEY_LR_NOTES, JSON.stringify(consignmentNotes));
+    } catch (e) {
+      console.error(e);
+    }
+  }, [consignmentNotes]);
+
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => {
       setToastMessage(null);
     }, 2800);
+  };
+
+  const handleSaveLRNote = (note: ConsignmentNote) => {
+    const existingIndex = consignmentNotes.findIndex((n) => n.id === note.id);
+    if (existingIndex >= 0) {
+      const copy = [...consignmentNotes];
+      copy[existingIndex] = note;
+      setConsignmentNotes(copy);
+    } else {
+      setConsignmentNotes([note, ...consignmentNotes]);
+    }
+  };
+
+  const handleDeleteLRNote = (id: string) => {
+    if (window.confirm('Are you sure you want to delete this e-LR note?')) {
+      setConsignmentNotes(consignmentNotes.filter((n) => n.id !== id));
+      showToast('Deleted e-LR note');
+    }
+  };
+
+  const handleCreateInvoiceFromLR = (lr: ConsignmentNote) => {
+    const newBillNo = calculateNextBillNumber(savedInvoices, currentInvoice);
+    const newInv = createNewInvoice(newBillNo);
+
+    newInv.clientName = lr.consigneeName || lr.consignorName || 'CLIENT TRANSPORT';
+    newInv.beNo = lr.lrNo;
+    newInv.beDate = lr.date;
+    newInv.refDocType = 'LR NO';
+
+    const routeParticular = lr.fromLocation && lr.toLocation ? `${lr.fromLocation} TO ${lr.toLocation}` : (lr.description || 'FREIGHT CHARGES');
+    const containerStr = lr.containerNo ? (lr.packagesCount ? `${lr.containerNo} ${lr.packagesCount}` : lr.containerNo) : (lr.packagesCount || '');
+
+    newInv.items = [
+      {
+        id: 'row-' + Date.now(),
+        sn: '1',
+        date: lr.date || '',
+        vehicleNo: lr.vehicleNo || '',
+        containerNo: containerStr,
+        particulars: routeParticular.toUpperCase(),
+        weight: lr.senderWeight || 'FIXED',
+        advance: '',
+        amount: lr.totalFreightAmount || lr.freightAmount || ''
+      }
+    ];
+
+    setCurrentInvoice(newInv);
+    showToast(`Created Bill #${newBillNo} from LR #${lr.lrNo}`);
   };
 
   // Invoice Handlers
@@ -478,6 +548,7 @@ export const App: React.FC = () => {
         onOpenSavedModal={() => setIsSavedModalOpen(true)}
         onOpenDirectoryModal={() => setIsDirectoryModalOpen(true)}
         onOpenTripSlipModal={() => setIsTripSlipModalOpen(true)}
+        onOpenLRModal={() => setIsLRModalOpen(true)}
         savedCount={savedInvoices.length}
         zoom={zoom}
         onZoomIn={handleZoomIn}
@@ -571,6 +642,18 @@ export const App: React.FC = () => {
         onDeleteTripSlip={handleDeleteTripSlip}
         vehicles={vehicles}
         company={currentInvoice.company}
+      />
+
+      {/* Consignment Note (e-LR / Bilty) Modal */}
+      <ConsignmentNoteModal
+        isOpen={isLRModalOpen}
+        onClose={() => setIsLRModalOpen(false)}
+        savedNotes={consignmentNotes}
+        onSaveNote={handleSaveLRNote}
+        onDeleteNote={handleDeleteLRNote}
+        customers={customers}
+        vehicles={vehicles}
+        onCreateInvoiceFromLR={handleCreateInvoiceFromLR}
       />
     </div>
   );

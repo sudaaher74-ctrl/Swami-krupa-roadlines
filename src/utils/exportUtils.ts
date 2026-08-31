@@ -243,3 +243,90 @@ export async function downloadTripSlipPDF(slipElementId: string, slipNo: string,
   const filename = `TripSlip_${cleanSlipNo}_${vehicleNo || 'Fleet'}.pdf`;
   pdf.save(filename);
 }
+
+/**
+ * Captures the Goods Consignment Note element and downloads as high-res A4 PDF
+ */
+export async function downloadConsignmentNotePDF(note: import('../types/invoice').ConsignmentNote): Promise<void> {
+  const element = document.getElementById('consignment-printable-doc');
+  if (!element) {
+    throw new Error('Consignment Note element not found');
+  }
+
+  if (document.fonts && document.fonts.ready) {
+    await document.fonts.ready;
+  }
+
+  const imgData = await toPng(element, {
+    quality: 1.0,
+    pixelRatio: 2.5,
+    backgroundColor: '#ffffff',
+    cacheBust: true,
+    style: {
+      transform: 'none',
+      margin: '0 auto',
+      boxShadow: 'none',
+    },
+  });
+
+  const pdf = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const pdfWidth = pdf.internal.pageSize.getWidth();
+  const elementWidth = element.offsetWidth || 794;
+  const elementHeight = element.offsetHeight || 1123;
+  const pdfHeight = (elementHeight * pdfWidth) / elementWidth;
+
+  pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
+
+  const cleanLrNo = (note.lrNo || 'LR').replace(/[/\\?%*:|"<>]/g, '_').trim();
+  const filename = `ConsignmentNote_${cleanLrNo}_${note.vehicleNo || 'Transport'}.pdf`;
+  pdf.save(filename);
+}
+
+/**
+ * Generates WhatsApp message for Goods Consignment Note (e-LR)
+ */
+export function generateConsignmentWhatsAppMessage(note: import('../types/invoice').ConsignmentNote): string {
+  const message =
+`📋 *${note.company.companyName}*
+*GOODS CONSIGNMENT NOTE (e-LR)*
+━━━━━━━━━━━━━━━━━━━━
+📄 *G.C. / LR No:* ${note.lrNo}
+📅 *Date:* ${note.date}
+🚚 *Vehicle No:* ${note.vehicleNo}
+🏢 *Consignor (Sender):* ${note.consignorName} (${note.fromLocation})
+🏬 *Consignee (Receiver):* ${note.consigneeName} (${note.toLocation})
+━━━━━━━━━━━━━━━━━━━━
+📦 *Goods Description:* ${note.description}
+🔢 *Packages:* ${note.packagesCount}
+${note.containerNo ? `📦 *Container:* ${note.containerNo}\n` : ''}⚖️ *Weight:* ${note.senderWeight}
+${note.ewayBillNo ? `📑 *E-Way Bill:* ${note.ewayBillNo}\n` : ''}${note.invoiceNo ? `📄 *Invoice No:* ${note.invoiceNo} (dt. ${note.invoiceDate})\n` : ''}━━━━━━━━━━━━━━━━━━━━
+💰 *Freight Type:* ${note.freightType}
+${note.totalFreightAmount ? `💵 *Total Freight:* ₹${formatCurrency(note.totalFreightAmount)}\n` : ''}⚖️ *GST Payable By:* ${note.gstPayableBy}
+📌 *Copy:* ${note.copyType}
+━━━━━━━━━━━━━━━━━━━━
+_Thank you for choosing Swami Krupa Roadlines!_`;
+
+  return message;
+}
+
+export function openConsignmentWhatsAppShare(note: import('../types/invoice').ConsignmentNote, customPhone?: string): void {
+  const message = generateConsignmentWhatsAppMessage(note);
+  const encodedMsg = encodeURIComponent(message);
+  
+  let cleanPhone = (customPhone || '').replace(/[^\d]/g, '');
+  if (cleanPhone.length === 10) {
+    cleanPhone = '91' + cleanPhone;
+  }
+
+  const url = cleanPhone
+    ? `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodedMsg}`
+    : `https://api.whatsapp.com/send?text=${encodedMsg}`;
+
+  window.open(url, '_blank');
+}
+

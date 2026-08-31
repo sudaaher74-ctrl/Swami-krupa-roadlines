@@ -449,4 +449,582 @@
     border: 2px solid #000000 !important;
     max-width: 100% !important;
   }
+
+  .consignment-note-paper {
+    box-shadow: none !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
 }
+
+/* =========================================================
+   GOODS CONSIGNMENT NOTE (e-LR / BILTY) STYLES
+   ========================================================= */
+
+.lr-modal-wide {
+  max-width: 1100px !important;
+}
+
+.lr-copy-selector-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 20px;
+  background: #f1f5f9;
+  border-bottom: 1px solid #e2e8f0;
+  flex-wrap: wrap;
+}
+
+.lr-copy-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.lr-copy-pills {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.lr-copy-pill {
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 9999px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.lr-copy-pill:hover {
+  border-color: #2563eb;
+  color: #2563eb;
+}
+
+.lr-copy-pill.active {
+  background: #1e3a8a;
+  border-color: #1e3a8a;
+  color: #ffffff;
+}
+
+.lr-editor-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Authentic Transport Paper Document */
+.consignment-note-paper {
+  width: 794px;
+  background: #ffffff;
+  margin: 0 auto;
+  padding: 12px;
+  box-sizing: border-box;
+  font-family: 'Tinos', Georgia, 'Times New Roman', serif;
+  color: #000000;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.consignment-frame {
+  border: 2px solid #1e3a8a;
+  background: #ffffff;
+  box-sizing: border-box;
+}
+
+/* Top bar */
+.cn-top-bar {
+  text-align: center;
+  border-bottom: 1.5px solid #1e3a8a;
+  padding: 4px 8px;
+}
+
+.cn-jurisdiction {
+  font-size: 11px;
+  font-weight: 700;
+  color: #1e293b;
+  text-transform: capitalize;
+}
+
+.cn-doc-main-title {
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  color: #1e3a8a;
+  margin-top: 1px;
+}
+
+/* Header */
+.cn-header-grid {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  border-bottom: 1.5px solid #1e3a8a;
+}
+
+.cn-brand-section {
+  padding: 8px 12px;
+  border-right: 1.5px solid #1e3a8a;
+  display: flex;
+  align-items: center;
+}
+
+.cn-brand-logo-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cn-logo-icon {
+  font-size: 32px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cn-company-name {
+  font-size: 22px;
+  font-weight: 900;
+  color: #d60000;
+  margin: 0;
+  letter-spacing: 0.5px;
+}
+
+.cn-tagline {
+  font-size: 11px;
+  font-weight: 800;
+  color: #1e293b;
+  letter-spacing: 0.5px;
+}
+
+.cn-branch-box {
+  padding: 6px 10px;
+  font-size: 10px;
+  line-height: 1.35;
+  color: #0f172a;
+}
+
+.cn-branch-title {
+  font-weight: 800;
+  font-size: 10.5px;
+  margin-bottom: 2px;
+  color: #1e3a8a;
+}
+
+/* Meta Bar Grid */
+.cn-meta-bar-grid {
+  display: grid;
+  grid-template-columns: 190px 180px 170px 1fr;
+  border-bottom: 1.5px solid #1e3a8a;
+  background: #f8fafc;
+  font-size: 11px;
+}
+
+.cn-meta-id-pan,
+.cn-meta-gc-no,
+.cn-meta-date,
+.cn-meta-vehicle {
+  padding: 6px 8px;
+  border-right: 1.5px solid #1e3a8a;
+  display: flex;
+  align-items: center;
+}
+
+.cn-meta-vehicle {
+  border-right: none;
+}
+
+.cn-meta-lbl {
+  font-weight: 800;
+  margin-right: 4px;
+}
+
+.cn-meta-val {
+  font-weight: 700;
+}
+
+.cn-lr-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cn-lr-symbol {
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.cn-lr-num {
+  font-size: 14px;
+  font-weight: 900;
+  color: #000000;
+}
+
+.cn-meta-val-date {
+  font-weight: 700;
+}
+
+.cn-meta-val-vehicle {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+/* Party details row */
+.cn-party-row {
+  display: grid;
+  grid-template-columns: 1fr 220px 140px;
+  border-bottom: 1.5px solid #1e3a8a;
+  font-size: 11px;
+}
+
+.cn-party-left {
+  padding: 6px 8px;
+  border-right: 1.5px solid #1e3a8a;
+  display: flex;
+}
+
+.cn-field-lbl {
+  font-weight: 800;
+  margin-right: 6px;
+  white-space: nowrap;
+}
+
+.cn-party-name-addr {
+  display: flex;
+  flex-direction: column;
+}
+
+.cn-party-name {
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.cn-party-addr {
+  font-size: 10.5px;
+  color: #334155;
+}
+
+.cn-party-mid {
+  padding: 6px 8px;
+  border-right: 1.5px solid #1e3a8a;
+  display: flex;
+  align-items: center;
+}
+
+.cn-gst-val {
+  font-weight: 700;
+}
+
+.cn-party-right {
+  padding: 6px 8px;
+  display: flex;
+  align-items: center;
+}
+
+.cn-route-val {
+  font-weight: 800;
+  font-size: 12px;
+}
+
+/* Main Body Grid */
+.cn-main-grid {
+  display: grid;
+  grid-template-columns: 50px 1fr 90px 75px 170px 170px;
+  border-bottom: 1.5px solid #1e3a8a;
+  min-height: 280px;
+}
+
+.cn-col-pkgs,
+.cn-col-desc,
+.cn-col-sender-wt,
+.cn-col-wt-charges,
+.cn-col-freight-table,
+.cn-col-docs {
+  border-right: 1.5px solid #1e3a8a;
+  display: flex;
+  flex-direction: column;
+}
+
+.cn-col-docs {
+  border-right: none;
+}
+
+.cn-col-header {
+  border-bottom: 1.5px solid #1e3a8a;
+  padding: 4px 2px;
+  text-align: center;
+  font-size: 10.5px;
+  font-weight: 800;
+  background: #f8fafc;
+  line-height: 1.2;
+}
+
+.cn-cell-body {
+  padding: 8px 6px;
+  font-size: 11.5px;
+  flex-grow: 1;
+}
+
+.cn-desc-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cn-desc-main {
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.cn-desc-container {
+  font-weight: 700;
+  font-size: 11.5px;
+  color: #1e3a8a;
+}
+
+.cn-desc-po {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* Freight table */
+.cn-freight-type-header {
+  border-bottom: 1.5px solid #1e3a8a;
+  padding: 3px 4px;
+  background: #f8fafc;
+  font-size: 9.5px;
+}
+
+.cn-ft-title {
+  display: block;
+  font-weight: 800;
+  text-align: center;
+  margin-bottom: 2px;
+}
+
+.cn-ft-checkboxes {
+  display: flex;
+  justify-content: space-around;
+  font-size: 9.5px;
+}
+
+.cn-chk {
+  font-weight: 700;
+}
+
+.cn-chk.active {
+  color: #1e3a8a;
+}
+
+.cn-mini-freight-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10px;
+}
+
+.cn-mini-freight-table td {
+  border-bottom: 1px solid #cbd5e1;
+  padding: 2.5px 4px;
+}
+
+.cn-mini-freight-table td:first-child {
+  font-weight: 700;
+  width: 65%;
+}
+
+.cn-total-freight-row {
+  border-top: 1.5px solid #1e3a8a;
+  font-weight: 900;
+  background: #f8fafc;
+}
+
+/* Documents Column */
+.cn-docs-header {
+  border-bottom: 1.5px solid #1e3a8a;
+  padding: 4px 2px;
+  text-align: center;
+  font-size: 10.5px;
+  font-weight: 800;
+  background: #f8fafc;
+}
+
+.cn-docs-content {
+  padding: 6px;
+  font-size: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cn-doc-field {
+  display: flex;
+  flex-direction: column;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 2px;
+}
+
+.cn-doc-lbl {
+  font-weight: 700;
+  font-size: 9.5px;
+  color: #475569;
+}
+
+.cn-doc-val {
+  font-weight: 800;
+  font-size: 11px;
+}
+
+.cn-delivery-type-box {
+  margin-top: 4px;
+  border: 1px dashed #cbd5e1;
+  padding: 4px;
+  background: #f8fafc;
+}
+
+.cn-dt-title {
+  font-weight: 800;
+  font-size: 9.5px;
+  margin-bottom: 2px;
+}
+
+.cn-dt-option {
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+/* Risk & GST Row */
+.cn-risk-gst-row {
+  display: grid;
+  grid-template-columns: 190px 1fr 310px;
+  border-bottom: 1.5px solid #1e3a8a;
+  padding: 6px 10px;
+  align-items: center;
+}
+
+.cn-watermark-copy-badge {
+  display: inline-block;
+  border: 1.5px solid #1e3a8a;
+  color: #1e3a8a;
+  font-size: 13px;
+  font-weight: 900;
+  padding: 3px 10px;
+  letter-spacing: 1px;
+  border-radius: 4px;
+}
+
+.cn-owner-risk-area {
+  text-align: center;
+}
+
+.cn-risk-text {
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  text-decoration: underline;
+}
+
+.cn-gst-payable-area {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.cn-gst-p-title {
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.cn-gst-p-checks {
+  display: flex;
+  gap: 8px;
+  font-weight: 700;
+}
+
+.cn-gst-chk {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.cn-gst-chk.active {
+  color: #1e3a8a;
+  font-weight: 900;
+}
+
+/* Footer Grid */
+.cn-footer-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 220px;
+  border-bottom: 1px solid #1e3a8a;
+  font-size: 9.5px;
+}
+
+.cn-footer-headoffice,
+.cn-footer-branches,
+.cn-footer-sign {
+  padding: 6px 8px;
+  border-right: 1.5px solid #1e3a8a;
+}
+
+.cn-footer-sign {
+  border-right: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.cn-foot-heading {
+  font-weight: 900;
+  color: #1e3a8a;
+  margin-bottom: 2px;
+  border-bottom: 1px solid #cbd5e1;
+  padding-bottom: 1px;
+}
+
+.cn-foot-content {
+  line-height: 1.35;
+}
+
+.cn-sign-for {
+  font-weight: 800;
+  font-size: 10px;
+  color: #d60000;
+  text-align: center;
+}
+
+.cn-sign-box {
+  min-height: 40px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.cn-sign-placeholder {
+  font-size: 9px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+/* Declaration bar */
+.cn-declaration-bar {
+  padding: 3px 8px;
+  font-size: 9px;
+  font-style: italic;
+  text-align: center;
+  background: #f8fafc;
+  color: #334155;
+}
+

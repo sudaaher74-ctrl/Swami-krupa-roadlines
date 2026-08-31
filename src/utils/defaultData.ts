@@ -104,3 +104,110 @@ export function createNewInvoice(billNumber?: string): InvoiceData {
     updatedAt: new Date().toISOString()
   };
 }
+
+export const defaultConsignmentNote: import('../types/invoice').ConsignmentNote = {
+  id: 'sample-lr-025992',
+  lrNo: '025992',
+  date: '24/08/2026',
+  vehicleNo: 'MH46CL8146',
+  branchName: 'NAVI MUMBAI (PANVEL) BRANCH',
+
+  consignorName: 'M/s Alembic Pharmaceuticals LTD',
+  consignorAddress: 'Nhava Sheva Mumbai Allcargo CFS',
+  consignorGst: '',
+  fromLocation: 'N/Shiva',
+
+  consigneeName: 'M/s Alembic Pharmaceuticals LTD',
+  consigneeAddress: 'F4 Jarod, Vadodara, Gujarat',
+  consigneeGst: '24AAATCA5591M1Z9',
+  toLocation: 'Jarod',
+
+  packagesCount: '1X20',
+  description: 'Flowlac-100 Lactose',
+  containerNo: 'MSKU3653724',
+  poNumber: 'PO No. 3200009020',
+  senderWeight: '1X20 Container Load',
+  weightCharges: '',
+
+  freightType: 'TBB',
+  freightAmount: '',
+  collectionCharges: '',
+  doorDeliveryCharges: '',
+  biltyCharges: '',
+  insuranceCharges: '',
+  labourCharges: '',
+  gstAmount: '',
+  totalFreightAmount: '',
+  freightRemark: 'ABB A/C Alembic',
+
+  ewayBillNo: '612169013377',
+  invoiceNo: '3081744',
+  invoiceDate: '11/08/2026',
+  invoiceValue: 'As per Invoice',
+  deliveryType: 'Godown',
+
+  gstPayableBy: 'CONSIGNEE',
+  copyType: 'CONSIGNEE COPY',
+  company: defaultCompanyProfile,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString()
+};
+
+export function createNewConsignmentNote(lrNumber?: string): import('../types/invoice').ConsignmentNote {
+  const today = new Date();
+  const dd = String(today.getDate()).padStart(2, '0');
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const yyyy = today.getFullYear();
+  const formattedDate = `${dd}/${mm}/${yyyy}`;
+
+  const randomDigits = Math.floor(10000 + Math.random() * 90000);
+
+  return {
+    id: 'lr-' + Date.now(),
+    lrNo: lrNumber || `0${randomDigits}`,
+    date: formattedDate,
+    vehicleNo: '',
+    branchName: 'NAVI MUMBAI BRANCH',
+
+    consignorName: '',
+    consignorAddress: '',
+    consignorGst: '',
+    fromLocation: '',
+
+    consigneeName: '',
+    consigneeAddress: '',
+    consigneeGst: '',
+    toLocation: '',
+
+    packagesCount: '1X20',
+    description: '',
+    containerNo: '',
+    poNumber: '',
+    senderWeight: '',
+    weightCharges: '',
+
+    freightType: 'TO PAY',
+    freightAmount: '',
+    collectionCharges: '',
+    doorDeliveryCharges: '',
+    biltyCharges: '',
+    insuranceCharges: '',
+    labourCharges: '',
+    gstAmount: '',
+    totalFreightAmount: '',
+    freightRemark: '',
+
+    ewayBillNo: '',
+    invoiceNo: '',
+    invoiceDate: formattedDate,
+    invoiceValue: 'As per Invoice',
+    deliveryType: 'Door Delivery',
+
+    gstPayableBy: 'CONSIGNEE',
+    copyType: 'CONSIGNEE COPY',
+    company: { ...defaultCompanyProfile },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+}
+
