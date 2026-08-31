@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import type { InvoiceData, CustomerRecord, VehicleRecord, TripSlip, ConsignmentNote } from './types/invoice';
-import { defaultInvoice, createNewInvoice, defaultCompanyProfile, defaultConsignmentNote } from './utils/defaultData';
+import {
+  defaultInvoice,
+  createNewInvoice,
+  defaultCompanyProfile,
+  defaultConsignmentNote,
+  createNewConsignmentNote,
+} from './utils/defaultData';
 import { calculateNextBillNumber, recordBillSequenceNumber } from './utils/billNumberUtils';
 import { HeaderBar } from './components/HeaderBar';
 import { InvoiceDocument } from './components/InvoiceDocument';
@@ -8,8 +14,15 @@ import { InvoiceEditor } from './components/InvoiceEditor';
 import { SavedInvoicesModal } from './components/SavedInvoicesModal';
 import { DirectoryModal } from './components/DirectoryModal';
 import { TripSlipModal } from './components/TripSlipModal';
-import { ConsignmentNoteModal } from './components/ConsignmentNoteModal';
-import { downloadInvoicePDF, openWhatsAppShare } from './utils/exportUtils';
+import { ConsignmentNoteEditor } from './components/ConsignmentNoteEditor';
+import { ConsignmentNoteDocument } from './components/ConsignmentNoteDocument';
+import { SavedConsignmentNotesModal } from './components/SavedConsignmentNotesModal';
+import {
+  downloadInvoicePDF,
+  openWhatsAppShare,
+  downloadConsignmentNotePDF,
+  openConsignmentWhatsAppShare,
+} from './utils/exportUtils';
 import { CheckCircle2 } from 'lucide-react';
 import './styles/app.css';
 
@@ -43,26 +56,33 @@ const defaultTripSlipsList: TripSlip[] = [
     totalExpense: 8662,
     company: defaultCompanyProfile,
     createdAt: new Date().toISOString(),
-  }
+  },
 ];
 
 const defaultCustomersList: CustomerRecord[] = [
   { id: 'c-1', name: 'ADNISHA TRANSPORT', phone: '9987010013', address: 'Navi Mumbai' },
-  { id: 'c-2', name: 'CONTINENTAL LOGISTICS', phone: '9820011223', address: 'Nhava Sheva' },
-  { id: 'c-3', name: 'SHREE BALAJI ROADWAYS', phone: '9888522803', address: 'Kalamboli' },
+  { id: 'c-2', name: 'M/s Alembic Pharmaceuticals LTD', phone: '9820011223', address: 'Nhava Sheva Mumbai Allcargo CFS' },
+  { id: 'c-3', name: 'CONTINENTAL LOGISTICS', phone: '9820011223', address: 'Nhava Sheva' },
+  { id: 'c-4', name: 'SHREE BALAJI ROADWAYS', phone: '9888522803', address: 'Kalamboli' },
 ];
 
 const defaultVehiclesList: VehicleRecord[] = [
-  { id: 'v-1', vehicleNo: 'MH46DL7778', type: '40ft Trailer' },
-  { id: 'v-2', vehicleNo: 'MH46BB1234', type: '20ft Truck' },
-  { id: 'v-3', vehicleNo: 'MH04GP5678', type: '40ft High Bed' },
+  { id: 'v-1', vehicleNo: 'MH46CL8146', type: '40ft Trailer' },
+  { id: 'v-2', vehicleNo: 'MH46DL7778', type: '40ft Trailer' },
+  { id: 'v-3', vehicleNo: 'MH46BB1234', type: '20ft Truck' },
 ];
 
 export const App: React.FC = () => {
+  // Document mode: Tax Invoice vs e-LR (Goods Consignment Note)
+  const [activeDocType, setActiveDocType] = useState<'invoice' | 'lr'>('invoice');
+
   // Current active invoice
-  const [currentInvoice, setCurrentInvoice] = useState<InvoiceData>(() => {
-    return defaultInvoice;
-  });
+  const [currentInvoice, setCurrentInvoice] = useState<InvoiceData>(() => defaultInvoice);
+
+  // Current active e-LR Note
+  const [currentConsignmentNote, setCurrentConsignmentNote] = useState<ConsignmentNote>(
+    () => defaultConsignmentNote
+  );
 
   // Saved Invoices list
   const [savedInvoices, setSavedInvoices] = useState<InvoiceData[]>(() => {
@@ -73,6 +93,17 @@ export const App: React.FC = () => {
       console.error('Error loading saved invoices', e);
     }
     return [defaultInvoice];
+  });
+
+  // Saved LR Notes list
+  const [consignmentNotes, setConsignmentNotes] = useState<ConsignmentNote[]>(() => {
+    try {
+      const stored = localStorage.getItem(LOCAL_STORAGE_KEY_LR_NOTES);
+      if (stored) return JSON.parse(stored);
+    } catch (e) {
+      console.error('Error loading LR notes', e);
+    }
+    return [defaultConsignmentNote];
   });
 
   // Saved Customers Master
@@ -108,22 +139,11 @@ export const App: React.FC = () => {
     return defaultTripSlipsList;
   });
 
-  // Consignment Notes (e-LR) Master
-  const [consignmentNotes, setConsignmentNotes] = useState<ConsignmentNote[]>(() => {
-    try {
-      const stored = localStorage.getItem(LOCAL_STORAGE_KEY_LR_NOTES);
-      if (stored) return JSON.parse(stored);
-    } catch (e) {
-      console.error('Error loading LR notes', e);
-    }
-    return [defaultConsignmentNote];
-  });
-
-  // UI state
+  // UI modals & view states
   const [isSavedModalOpen, setIsSavedModalOpen] = useState(false);
+  const [isSavedLRModalOpen, setIsSavedLRModalOpen] = useState(false);
   const [isDirectoryModalOpen, setIsDirectoryModalOpen] = useState(false);
   const [isTripSlipModalOpen, setIsTripSlipModalOpen] = useState(false);
-  const [isLRModalOpen, setIsLRModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'split' | 'preview' | 'editor'>('split');
   const [zoom, setZoom] = useState<number>(0.92);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -133,42 +153,32 @@ export const App: React.FC = () => {
   useEffect(() => {
     try {
       localStorage.setItem(LOCAL_STORAGE_KEY_INVOICES, JSON.stringify(savedInvoices));
-    } catch (e) {
-      console.error(e);
-    }
+    } catch (e) {}
   }, [savedInvoices]);
 
   useEffect(() => {
     try {
+      localStorage.setItem(LOCAL_STORAGE_KEY_LR_NOTES, JSON.stringify(consignmentNotes));
+    } catch (e) {}
+  }, [consignmentNotes]);
+
+  useEffect(() => {
+    try {
       localStorage.setItem(LOCAL_STORAGE_KEY_CUSTOMERS, JSON.stringify(customers));
-    } catch (e) {
-      console.error(e);
-    }
+    } catch (e) {}
   }, [customers]);
 
   useEffect(() => {
     try {
       localStorage.setItem(LOCAL_STORAGE_KEY_VEHICLES, JSON.stringify(vehicles));
-    } catch (e) {
-      console.error(e);
-    }
+    } catch (e) {}
   }, [vehicles]);
 
   useEffect(() => {
     try {
       localStorage.setItem(LOCAL_STORAGE_KEY_TRIP_SLIPS, JSON.stringify(tripSlips));
-    } catch (e) {
-      console.error(e);
-    }
+    } catch (e) {}
   }, [tripSlips]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(LOCAL_STORAGE_KEY_LR_NOTES, JSON.stringify(consignmentNotes));
-    } catch (e) {
-      console.error(e);
-    }
-  }, [consignmentNotes]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -177,55 +187,7 @@ export const App: React.FC = () => {
     }, 2800);
   };
 
-  const handleSaveLRNote = (note: ConsignmentNote) => {
-    const existingIndex = consignmentNotes.findIndex((n) => n.id === note.id);
-    if (existingIndex >= 0) {
-      const copy = [...consignmentNotes];
-      copy[existingIndex] = note;
-      setConsignmentNotes(copy);
-    } else {
-      setConsignmentNotes([note, ...consignmentNotes]);
-    }
-  };
-
-  const handleDeleteLRNote = (id: string) => {
-    if (window.confirm('Are you sure you want to delete this e-LR note?')) {
-      setConsignmentNotes(consignmentNotes.filter((n) => n.id !== id));
-      showToast('Deleted e-LR note');
-    }
-  };
-
-  const handleCreateInvoiceFromLR = (lr: ConsignmentNote) => {
-    const newBillNo = calculateNextBillNumber(savedInvoices, currentInvoice);
-    const newInv = createNewInvoice(newBillNo);
-
-    newInv.clientName = lr.consigneeName || lr.consignorName || 'CLIENT TRANSPORT';
-    newInv.beNo = lr.lrNo;
-    newInv.beDate = lr.date;
-    newInv.refDocType = 'LR NO';
-
-    const routeParticular = lr.fromLocation && lr.toLocation ? `${lr.fromLocation} TO ${lr.toLocation}` : (lr.description || 'FREIGHT CHARGES');
-    const containerStr = lr.containerNo ? (lr.packagesCount ? `${lr.containerNo} ${lr.packagesCount}` : lr.containerNo) : (lr.packagesCount || '');
-
-    newInv.items = [
-      {
-        id: 'row-' + Date.now(),
-        sn: '1',
-        date: lr.date || '',
-        vehicleNo: lr.vehicleNo || '',
-        containerNo: containerStr,
-        particulars: routeParticular.toUpperCase(),
-        weight: lr.senderWeight || 'FIXED',
-        advance: '',
-        amount: lr.totalFreightAmount || lr.freightAmount || ''
-      }
-    ];
-
-    setCurrentInvoice(newInv);
-    showToast(`Created Bill #${newBillNo} from LR #${lr.lrNo}`);
-  };
-
-  // Invoice Handlers
+  // --- INVOICE ACTIONS ---
   const handleSaveInvoice = () => {
     const updated = { ...currentInvoice, updatedAt: new Date().toISOString() };
     recordBillSequenceNumber(updated.billNo);
@@ -245,7 +207,7 @@ export const App: React.FC = () => {
   const handleSaveAndNextInvoice = () => {
     const updated = { ...currentInvoice, updatedAt: new Date().toISOString() };
     recordBillSequenceNumber(updated.billNo);
-    
+
     let updatedList = [...savedInvoices];
     const existingIndex = savedInvoices.findIndex((inv) => inv.id === updated.id);
     if (existingIndex >= 0) {
@@ -255,7 +217,6 @@ export const App: React.FC = () => {
     }
     setSavedInvoices(updatedList);
 
-    // Calculate next sequential bill number
     const nextBillNo = calculateNextBillNumber(updatedList, updated);
     recordBillSequenceNumber(nextBillNo);
 
@@ -268,7 +229,6 @@ export const App: React.FC = () => {
       if (savedBank) newInv.bank = JSON.parse(savedBank);
     } catch (e) {}
 
-    // Inherit the same reference document type (BE NO vs INVOICE NO) from current bill
     if (currentInvoice.refDocType) {
       newInv.refDocType = currentInvoice.refDocType;
     }
@@ -282,7 +242,6 @@ export const App: React.FC = () => {
     recordBillSequenceNumber(newBillNo);
 
     const newInv = createNewInvoice(newBillNo);
-
     try {
       const savedComp = localStorage.getItem(LOCAL_STORAGE_KEY_COMPANY);
       if (savedComp) newInv.company = JSON.parse(savedComp);
@@ -299,6 +258,92 @@ export const App: React.FC = () => {
     showToast(`Created new Bill #${newBillNo}`);
   };
 
+  // --- CONSIGNMENT NOTE (e-LR) ACTIONS ---
+  const handleSaveLR = () => {
+    const updated = { ...currentConsignmentNote, updatedAt: new Date().toISOString() };
+    const existingIndex = consignmentNotes.findIndex((n) => n.id === updated.id);
+
+    if (existingIndex >= 0) {
+      const copy = [...consignmentNotes];
+      copy[existingIndex] = updated;
+      setConsignmentNotes(copy);
+      showToast(`Updated e-LR #${updated.lrNo} successfully!`);
+    } else {
+      setConsignmentNotes([updated, ...consignmentNotes]);
+      showToast(`Saved e-LR #${updated.lrNo} to records!`);
+    }
+  };
+
+  const handleNewLR = () => {
+    const fresh = createNewConsignmentNote();
+    setCurrentConsignmentNote(fresh);
+    showToast(`Created new e-LR #${fresh.lrNo}`);
+  };
+
+  const handleDuplicateLR = (note: ConsignmentNote) => {
+    const randomDigits = Math.floor(10000 + Math.random() * 90000);
+    const duplicated: ConsignmentNote = {
+      ...note,
+      id: 'lr-' + Date.now(),
+      lrNo: `0${randomDigits}`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    setConsignmentNotes([duplicated, ...consignmentNotes]);
+    setCurrentConsignmentNote(duplicated);
+    showToast(`Duplicated into e-LR #${duplicated.lrNo}`);
+  };
+
+  const handleDeleteLR = (id: string) => {
+    if (window.confirm('Are you sure you want to delete this e-LR note?')) {
+      const filtered = consignmentNotes.filter((n) => n.id !== id);
+      setConsignmentNotes(filtered);
+      if (currentConsignmentNote.id === id) {
+        setCurrentConsignmentNote(filtered.length > 0 ? filtered[0] : createNewConsignmentNote());
+      }
+      showToast('Deleted e-LR note');
+    }
+  };
+
+  const handleConvertLRToInvoice = (lr: ConsignmentNote) => {
+    const newBillNo = calculateNextBillNumber(savedInvoices, currentInvoice);
+    const newInv = createNewInvoice(newBillNo);
+
+    newInv.clientName = lr.consigneeName || lr.consignorName || 'CLIENT TRANSPORT';
+    newInv.beNo = lr.lrNo;
+    newInv.beDate = lr.date;
+    newInv.refDocType = 'LR NO';
+
+    const routeParticular =
+      lr.fromLocation && lr.toLocation
+        ? `${lr.fromLocation} TO ${lr.toLocation}`
+        : lr.description || 'FREIGHT CHARGES';
+    const containerStr = lr.containerNo
+      ? lr.packagesCount
+        ? `${lr.containerNo} ${lr.packagesCount}`
+        : lr.containerNo
+      : lr.packagesCount || '';
+
+    newInv.items = [
+      {
+        id: 'row-' + Date.now(),
+        sn: '1',
+        date: lr.date || '',
+        vehicleNo: lr.vehicleNo || '',
+        containerNo: containerStr,
+        particulars: routeParticular.toUpperCase(),
+        weight: lr.senderWeight || 'FIXED',
+        advance: '',
+        amount: lr.totalFreightAmount || lr.freightAmount || '',
+      },
+    ];
+
+    setCurrentInvoice(newInv);
+    setActiveDocType('invoice');
+    showToast(`Created Bill #${newBillNo} from LR #${lr.lrNo}`);
+  };
+
+  // --- UNIFIED EXPORT & PRINT ACTIONS ---
   const handlePrint = () => {
     window.print();
   };
@@ -306,9 +351,14 @@ export const App: React.FC = () => {
   const handleDownloadPDF = async () => {
     try {
       setIsDownloadingPDF(true);
-      showToast('Generating high-res A4 PDF...');
-      await downloadInvoicePDF(currentInvoice);
-      showToast('PDF downloaded successfully!');
+      showToast(`Generating high-res ${activeDocType === 'lr' ? 'e-LR' : 'Bill'} PDF...`);
+      if (activeDocType === 'lr') {
+        await downloadConsignmentNotePDF(currentConsignmentNote);
+        showToast('e-LR PDF downloaded successfully!');
+      } else {
+        await downloadInvoicePDF(currentInvoice);
+        showToast('Invoice PDF downloaded successfully!');
+      }
     } catch (err) {
       console.error(err);
       alert('Could not generate PDF. You can also use the Print button to Save as PDF.');
@@ -318,210 +368,181 @@ export const App: React.FC = () => {
   };
 
   const handleWhatsAppShare = () => {
-    openWhatsAppShare(currentInvoice, currentInvoice.clientPhone);
-    showToast('Opening WhatsApp with bill summary...');
-  };
-
-  const handleLoadOriginalSample = () => {
-    setCurrentInvoice(defaultInvoice);
-    showToast('Loaded original Swami Krupa Roadlines template!');
-  };
-
-  const handleSaveAsDefaultProfile = () => {
-    try {
-      localStorage.setItem(LOCAL_STORAGE_KEY_COMPANY, JSON.stringify(currentInvoice.company));
-      localStorage.setItem(LOCAL_STORAGE_KEY_BANK, JSON.stringify(currentInvoice.bank));
-      showToast('Saved company profile & bank details as default for future bills!');
-    } catch (e) {
-      console.error(e);
+    if (activeDocType === 'lr') {
+      openConsignmentWhatsAppShare(currentConsignmentNote);
+    } else {
+      openWhatsAppShare(currentInvoice);
     }
   };
 
-  // Customer & Vehicle Quick Savers
-  const handleQuickSaveCustomer = (name: string, phone?: string) => {
-    if (!name.trim()) return;
-    const exists = customers.some((c) => c.name.toUpperCase() === name.toUpperCase());
-    if (exists) {
-      showToast(`Party '${name}' is already in Directory.`);
-      return;
-    }
-    const newCust: CustomerRecord = {
-      id: 'c-' + Date.now(),
-      name: name.trim().toUpperCase(),
-      phone: phone || '',
-    };
-    setCustomers([newCust, ...customers]);
-    showToast(`Added '${name}' to Directory!`);
-  };
-
-  const handleQuickSaveVehicle = (vehicleNo: string) => {
-    if (!vehicleNo.trim()) return;
-    const exists = vehicles.some((v) => v.vehicleNo.toUpperCase() === vehicleNo.toUpperCase());
-    if (exists) {
-      showToast(`Vehicle '${vehicleNo}' is already in Directory.`);
-      return;
-    }
-    const newVeh: VehicleRecord = {
-      id: 'v-' + Date.now(),
-      vehicleNo: vehicleNo.trim().toUpperCase(),
-    };
-    setVehicles([newVeh, ...vehicles]);
-    showToast(`Added '${vehicleNo}' to Directory!`);
-  };
-
-  // Directory CRUD Handlers
-  const handleAddCustomer = (c: Omit<CustomerRecord, 'id'>) => {
-    setCustomers([{ ...c, id: 'c-' + Date.now() }, ...customers]);
-    showToast(`Party '${c.name}' saved!`);
-  };
-
-  const handleUpdateCustomer = (c: CustomerRecord) => {
-    setCustomers(customers.map((item) => (item.id === c.id ? c : item)));
-    showToast(`Party '${c.name}' updated!`);
-  };
-
-  const handleDeleteCustomer = (id: string) => {
-    setCustomers(customers.filter((c) => c.id !== id));
-    showToast('Party deleted from Directory.');
-  };
-
-  const handleAddVehicle = (v: Omit<VehicleRecord, 'id'>) => {
-    setVehicles([{ ...v, id: 'v-' + Date.now() }, ...vehicles]);
-    showToast(`Vehicle '${v.vehicleNo}' saved!`);
-  };
-
-  const handleUpdateVehicle = (v: VehicleRecord) => {
-    setVehicles(vehicles.map((item) => (item.id === v.id ? v : item)));
-    showToast(`Vehicle '${v.vehicleNo}' updated!`);
-  };
-
-  const handleDeleteVehicle = (id: string) => {
-    setVehicles(vehicles.filter((v) => v.id !== id));
-    showToast('Vehicle deleted from Directory.');
-  };
-
-  const handleSelectCustomerFromDir = (c: CustomerRecord) => {
-    const copy = { ...currentInvoice, clientName: c.name, clientPhone: c.phone || currentInvoice.clientPhone };
-    setCurrentInvoice(copy);
-    showToast(`Applied '${c.name}' to current bill.`);
-  };
-
-  // Saved Invoices handlers
   const handleSelectInvoice = (inv: InvoiceData) => {
     setCurrentInvoice(inv);
-    setIsSavedModalOpen(false);
     showToast(`Loaded Bill #${inv.billNo}`);
   };
 
   const handleDuplicateInvoice = (inv: InvoiceData) => {
-    const today = new Date();
-    const dd = String(today.getDate()).padStart(2, '0');
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const yyyy = today.getFullYear();
+    const newBillNo = calculateNextBillNumber(savedInvoices, inv);
+    recordBillSequenceNumber(newBillNo);
 
-    const cloned: InvoiceData = {
+    const duplicated: InvoiceData = {
       ...inv,
       id: 'inv-' + Date.now(),
-      billNo: `${inv.billNo} (COPY)`,
-      date: `${dd}-${mm}-${yyyy}`,
+      billNo: newBillNo,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-
-    setSavedInvoices([cloned, ...savedInvoices]);
-    setCurrentInvoice(cloned);
-    setIsSavedModalOpen(false);
-    showToast(`Duplicated into new bill!`);
+    setSavedInvoices([duplicated, ...savedInvoices]);
+    setCurrentInvoice(duplicated);
+    showToast(`Duplicated to new Bill #${newBillNo}`);
   };
 
   const handleDeleteInvoice = (id: string) => {
-    setSavedInvoices(savedInvoices.filter((inv) => inv.id !== id));
-    showToast('Invoice deleted from records');
+    const filtered = savedInvoices.filter((inv) => inv.id !== id);
+    setSavedInvoices(filtered);
+    if (currentInvoice.id === id) {
+      setCurrentInvoice(filtered.length > 0 ? filtered[0] : createNewInvoice());
+    }
+    showToast('Deleted invoice from records');
   };
 
   const handleUpdateInvoicePayment = (
-    invoiceId: string,
+    id: string,
     status: 'PAID' | 'UNPAID' | 'PARTIAL',
     amountReceived?: number,
     paymentDate?: string,
     paymentMode?: string,
     paymentNotes?: string
   ) => {
+    const updates: Partial<InvoiceData> = {
+      paymentStatus: status,
+      amountReceived,
+      paymentDate,
+      paymentMode,
+      paymentNotes,
+    };
     const updatedList = savedInvoices.map((inv) => {
-      if (inv.id === invoiceId) {
-        return {
-          ...inv,
-          paymentStatus: status,
-          amountReceived: amountReceived !== undefined ? amountReceived : inv.amountReceived,
-          paymentDate: paymentDate || inv.paymentDate,
-          paymentMode: paymentMode || inv.paymentMode,
-          paymentNotes: paymentNotes !== undefined ? paymentNotes : inv.paymentNotes,
-          updatedAt: new Date().toISOString(),
-        };
+      if (inv.id === id) {
+        return { ...inv, ...updates, updatedAt: new Date().toISOString() };
       }
       return inv;
     });
-
     setSavedInvoices(updatedList);
-
-    if (currentInvoice.id === invoiceId) {
-      setCurrentInvoice({
-        ...currentInvoice,
-        paymentStatus: status,
-        amountReceived: amountReceived !== undefined ? amountReceived : currentInvoice.amountReceived,
-        paymentDate: paymentDate || currentInvoice.paymentDate,
-        paymentMode: paymentMode || currentInvoice.paymentMode,
-        paymentNotes: paymentNotes !== undefined ? paymentNotes : currentInvoice.paymentNotes,
-      });
+    if (currentInvoice.id === id) {
+      setCurrentInvoice({ ...currentInvoice, ...updates, updatedAt: new Date().toISOString() });
     }
-
-    showToast(`Payment updated: ${status}`);
+    showToast('Updated payment status!');
   };
 
-  // Trip Slips handlers
+  const handleSaveAsDefaultProfile = (comp: any) => {
+    try {
+      localStorage.setItem(LOCAL_STORAGE_KEY_COMPANY, JSON.stringify(comp));
+      showToast('Saved company profile as default template!');
+    } catch (e) {}
+  };
+
+  const handleLoadOriginalSample = () => {
+    if (window.confirm('Reset current template to Swami Krupa Roadlines demo sample?')) {
+      if (activeDocType === 'lr') {
+        setCurrentConsignmentNote(defaultConsignmentNote);
+      } else {
+        setCurrentInvoice(defaultInvoice);
+      }
+      showToast('Loaded demo sample!');
+    }
+  };
+
+  // Directory handlers
+  const handleAddCustomer = (c: Omit<CustomerRecord, 'id'>) => {
+    const newCust: CustomerRecord = { ...c, id: 'cust-' + Date.now() };
+    setCustomers([...customers, newCust]);
+    showToast(`Added ${c.name} to directory!`);
+  };
+
+  const handleUpdateCustomer = (c: CustomerRecord) => {
+    setCustomers(customers.map((cust) => (cust.id === c.id ? c : cust)));
+    showToast(`Updated ${c.name}`);
+  };
+
+  const handleDeleteCustomer = (id: string) => {
+    setCustomers(customers.filter((cust) => cust.id !== id));
+    showToast('Removed customer from directory');
+  };
+
+  const handleAddVehicle = (v: Omit<VehicleRecord, 'id'>) => {
+    const newVeh: VehicleRecord = { ...v, id: 'veh-' + Date.now() };
+    setVehicles([...vehicles, newVeh]);
+    showToast(`Added vehicle ${v.vehicleNo} to fleet!`);
+  };
+
+  const handleUpdateVehicle = (v: VehicleRecord) => {
+    setVehicles(vehicles.map((veh) => (veh.id === v.id ? v : veh)));
+    showToast(`Updated ${v.vehicleNo}`);
+  };
+
+  const handleDeleteVehicle = (id: string) => {
+    setVehicles(vehicles.filter((veh) => veh.id !== id));
+    showToast('Removed vehicle from fleet');
+  };
+
+  const handleQuickSaveCustomer = (name: string, phone?: string) => {
+    if (!name.trim()) return;
+    const exists = customers.some((c) => c.name.toLowerCase() === name.trim().toLowerCase());
+    if (!exists) {
+      handleAddCustomer({ name: name.trim(), phone: phone?.trim() });
+    }
+  };
+
+  const handleQuickSaveVehicle = (vehicleNo: string) => {
+    if (!vehicleNo.trim()) return;
+    const cleanNo = vehicleNo.trim().toUpperCase();
+    const exists = vehicles.some((v) => v.vehicleNo.toUpperCase() === cleanNo);
+    if (!exists) {
+      handleAddVehicle({ vehicleNo: cleanNo, type: 'Transport Fleet' });
+    }
+  };
+
+  const handleSelectCustomerFromDir = (cust: CustomerRecord) => {
+    if (activeDocType === 'lr') {
+      setCurrentConsignmentNote((prev) => ({
+        ...prev,
+        consigneeName: cust.name,
+        consigneeGst: cust.gstin || prev.consigneeGst,
+        consigneeAddress: cust.address || prev.consigneeAddress,
+      }));
+    } else {
+      setCurrentInvoice((prev) => ({
+        ...prev,
+        clientName: cust.name,
+        clientPhone: cust.phone || prev.clientPhone,
+      }));
+    }
+    setIsDirectoryModalOpen(false);
+    showToast(`Applied ${cust.name}`);
+  };
+
+  // Trip slips handlers
   const handleSaveTripSlip = (slip: TripSlip) => {
-    const existingIndex = tripSlips.findIndex(s => s.id === slip.id);
+    const existingIndex = tripSlips.findIndex((s) => s.id === slip.id);
     if (existingIndex >= 0) {
       const copy = [...tripSlips];
       copy[existingIndex] = slip;
       setTripSlips(copy);
-      showToast(`Updated ${slip.slipNo} for ${slip.vehicleNo}`);
+      showToast(`Updated Trip Slip #${slip.slipNo}`);
     } else {
       setTripSlips([slip, ...tripSlips]);
-      showToast(`Saved ${slip.slipNo} for ${slip.vehicleNo}`);
+      showToast(`Saved Trip Slip #${slip.slipNo}`);
     }
   };
 
   const handleDeleteTripSlip = (id: string) => {
-    setTripSlips(tripSlips.filter(s => s.id !== id));
-    showToast('Trip slip deleted from records');
-  };
-
-  const handleExportAll = () => {
-    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(savedInvoices, null, 2));
-    const downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute('href', dataStr);
-    downloadAnchor.setAttribute('download', `roadlines_invoices_backup_${new Date().toISOString().slice(0, 10)}.json`);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
-    showToast('Exported backup file successfully!');
-  };
-
-  const handleImportBackup = (importedList: InvoiceData[]) => {
-    setSavedInvoices([...importedList, ...savedInvoices]);
-    if (importedList.length > 0) {
-      setCurrentInvoice(importedList[0]);
+    if (window.confirm('Are you sure you want to delete this trip slip?')) {
+      setTripSlips(tripSlips.filter((s) => s.id !== id));
+      showToast('Deleted trip slip');
     }
   };
 
-  // Zoom handlers
-  const handleZoomIn = () => setZoom((z) => Math.min(1.4, z + 0.08));
-  const handleZoomOut = () => setZoom((z) => Math.max(0.5, z - 0.08));
-  const handleZoomReset = () => setZoom(0.92);
-
-  // Field change from document direct edit
-  const handleDirectFieldUpdate = (field: string, val: any) => {
+  // Direct canvas edits
+  const handleDirectInvoiceFieldUpdate = (field: string, val: any) => {
     const copy = { ...currentInvoice };
     if (field.startsWith('company.')) {
       const sub = field.replace('company.', '');
@@ -535,25 +556,44 @@ export const App: React.FC = () => {
     setCurrentInvoice(copy);
   };
 
+  const handleDirectLRFieldUpdate = (field: string, val: any) => {
+    const copy = { ...currentConsignmentNote };
+    if (field.startsWith('company.')) {
+      const sub = field.replace('company.', '');
+      copy.company = { ...copy.company, [sub]: val };
+    } else {
+      (copy as any)[field] = val;
+    }
+    setCurrentConsignmentNote(copy);
+  };
+
   return (
     <div className="app-viewport">
       {/* Top Application Header */}
       <HeaderBar
-        onNewInvoice={handleNewInvoice}
-        onSaveInvoice={handleSaveInvoice}
-        onSaveAndNextInvoice={handleSaveAndNextInvoice}
+        activeDocType={activeDocType}
+        onDocTypeChange={setActiveDocType}
+        onNewInvoice={activeDocType === 'lr' ? handleNewLR : handleNewInvoice}
+        onSaveInvoice={activeDocType === 'lr' ? handleSaveLR : handleSaveInvoice}
+        onSaveAndNextInvoice={activeDocType === 'invoice' ? handleSaveAndNextInvoice : undefined}
         onPrint={handlePrint}
         onDownloadPDF={handleDownloadPDF}
         onWhatsAppShare={handleWhatsAppShare}
-        onOpenSavedModal={() => setIsSavedModalOpen(true)}
+        onOpenSavedModal={() => {
+          if (activeDocType === 'lr') {
+            setIsSavedLRModalOpen(true);
+          } else {
+            setIsSavedModalOpen(true);
+          }
+        }}
         onOpenDirectoryModal={() => setIsDirectoryModalOpen(true)}
         onOpenTripSlipModal={() => setIsTripSlipModalOpen(true)}
-        onOpenLRModal={() => setIsLRModalOpen(true)}
         savedCount={savedInvoices.length}
+        savedLRCount={consignmentNotes.length}
         zoom={zoom}
-        onZoomIn={handleZoomIn}
-        onZoomOut={handleZoomOut}
-        onZoomReset={handleZoomReset}
+        onZoomIn={() => setZoom((z) => Math.min(1.4, z + 0.08))}
+        onZoomOut={() => setZoom((z) => Math.max(0.5, z - 0.08))}
+        onZoomReset={() => setZoom(0.92)}
         onLoadOriginalSample={handleLoadOriginalSample}
         viewMode={viewMode}
         onViewModeChange={setViewMode}
@@ -565,18 +605,30 @@ export const App: React.FC = () => {
         {/* Left Form Editor */}
         {viewMode !== 'preview' && (
           <aside className="editor-sidebar-container no-print">
-            <InvoiceEditor
-              invoice={currentInvoice}
-              onChange={setCurrentInvoice}
-              onSaveAsDefaultProfile={handleSaveAsDefaultProfile}
-              customers={customers}
-              vehicles={vehicles}
-              savedInvoices={savedInvoices}
-              onSaveAndNext={handleSaveAndNextInvoice}
-              onQuickSaveCustomer={handleQuickSaveCustomer}
-              onQuickSaveVehicle={handleQuickSaveVehicle}
-              onOpenDirectoryModal={() => setIsDirectoryModalOpen(true)}
-            />
+            {activeDocType === 'lr' ? (
+              <ConsignmentNoteEditor
+                note={currentConsignmentNote}
+                onChange={setCurrentConsignmentNote}
+                customers={customers}
+                vehicles={vehicles}
+                onSaveAsDefaultProfile={handleSaveAsDefaultProfile}
+                onConvertToInvoice={handleConvertLRToInvoice}
+                onOpenDirectoryModal={() => setIsDirectoryModalOpen(true)}
+              />
+            ) : (
+              <InvoiceEditor
+                invoice={currentInvoice}
+                onChange={setCurrentInvoice}
+                onSaveAsDefaultProfile={() => handleSaveAsDefaultProfile(currentInvoice.company)}
+                customers={customers}
+                vehicles={vehicles}
+                savedInvoices={savedInvoices}
+                onSaveAndNext={handleSaveAndNextInvoice}
+                onQuickSaveCustomer={handleQuickSaveCustomer}
+                onQuickSaveVehicle={handleQuickSaveVehicle}
+                onOpenDirectoryModal={() => setIsDirectoryModalOpen(true)}
+              />
+            )}
           </aside>
         )}
 
@@ -587,11 +639,19 @@ export const App: React.FC = () => {
               className="preview-scaler"
               style={{ transform: `scale(${zoom})`, transformOrigin: 'top center' }}
             >
-              <InvoiceDocument
-                invoice={currentInvoice}
-                isEditableInline={true}
-                onUpdateField={handleDirectFieldUpdate}
-              />
+              {activeDocType === 'lr' ? (
+                <ConsignmentNoteDocument
+                  note={currentConsignmentNote}
+                  isEditableInline={true}
+                  onUpdateField={handleDirectLRFieldUpdate}
+                />
+              ) : (
+                <InvoiceDocument
+                  invoice={currentInvoice}
+                  isEditableInline={true}
+                  onUpdateField={handleDirectInvoiceFieldUpdate}
+                />
+              )}
             </div>
           </section>
         )}
@@ -613,9 +673,34 @@ export const App: React.FC = () => {
         onSelectInvoice={handleSelectInvoice}
         onDuplicateInvoice={handleDuplicateInvoice}
         onDeleteInvoice={handleDeleteInvoice}
-        onExportAll={handleExportAll}
-        onImportBackup={handleImportBackup}
+        onExportAll={() => {
+          const dataStr =
+            'data:text/json;charset=utf-8,' +
+            encodeURIComponent(JSON.stringify(savedInvoices, null, 2));
+          const anchor = document.createElement('a');
+          anchor.href = dataStr;
+          anchor.download = `roadlines_invoices_backup_${new Date().toISOString().slice(0, 10)}.json`;
+          anchor.click();
+          anchor.remove();
+        }}
+        onImportBackup={(imported) => setSavedInvoices([...imported, ...savedInvoices])}
         onUpdateInvoicePayment={handleUpdateInvoicePayment}
+      />
+
+      {/* Saved Consignment Notes (e-LR) Modal */}
+      <SavedConsignmentNotesModal
+        isOpen={isSavedLRModalOpen}
+        onClose={() => setIsSavedLRModalOpen(false)}
+        savedNotes={consignmentNotes}
+        onSelectNote={(n) => {
+          setCurrentConsignmentNote(n);
+          setActiveDocType('lr');
+          showToast(`Loaded e-LR #${n.lrNo}`);
+        }}
+        onDuplicateNote={handleDuplicateLR}
+        onDeleteNote={handleDeleteLR}
+        onConvertToInvoice={handleConvertLRToInvoice}
+        onNewNote={handleNewLR}
       />
 
       {/* Directory Modal */}
@@ -642,18 +727,6 @@ export const App: React.FC = () => {
         onDeleteTripSlip={handleDeleteTripSlip}
         vehicles={vehicles}
         company={currentInvoice.company}
-      />
-
-      {/* Consignment Note (e-LR / Bilty) Modal */}
-      <ConsignmentNoteModal
-        isOpen={isLRModalOpen}
-        onClose={() => setIsLRModalOpen(false)}
-        savedNotes={consignmentNotes}
-        onSaveNote={handleSaveLRNote}
-        onDeleteNote={handleDeleteLRNote}
-        customers={customers}
-        vehicles={vehicles}
-        onCreateInvoiceFromLR={handleCreateInvoiceFromLR}
       />
     </div>
   );

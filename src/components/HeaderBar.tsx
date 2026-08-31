@@ -13,10 +13,14 @@ import {
   Download,
   Share2,
   Users,
-  Fuel
+  Fuel,
+  FileText,
+  ClipboardList
 } from 'lucide-react';
 
 interface HeaderBarProps {
+  activeDocType: 'invoice' | 'lr';
+  onDocTypeChange: (type: 'invoice' | 'lr') => void;
   onNewInvoice: () => void;
   onSaveInvoice: () => void;
   onSaveAndNextInvoice?: () => void;
@@ -26,8 +30,8 @@ interface HeaderBarProps {
   onOpenSavedModal: () => void;
   onOpenDirectoryModal: () => void;
   onOpenTripSlipModal?: () => void;
-  onOpenLRModal?: () => void;
   savedCount: number;
+  savedLRCount?: number;
   zoom: number;
   onZoomIn: () => void;
   onZoomOut: () => void;
@@ -39,6 +43,8 @@ interface HeaderBarProps {
 }
 
 export const HeaderBar: React.FC<HeaderBarProps> = ({
+  activeDocType,
+  onDocTypeChange,
   onNewInvoice,
   onSaveInvoice,
   onSaveAndNextInvoice,
@@ -48,8 +54,8 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   onOpenSavedModal,
   onOpenDirectoryModal,
   onOpenTripSlipModal,
-  onOpenLRModal,
   savedCount,
+  savedLRCount = 0,
   zoom,
   onZoomIn,
   onZoomOut,
@@ -59,9 +65,11 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   onViewModeChange,
   isDownloadingPDF = false,
 }) => {
+  const isLR = activeDocType === 'lr';
+
   return (
     <header className="app-header no-print">
-      {/* Brand & Studio Title */}
+      {/* Brand & Document Mode Switcher */}
       <div className="header-left">
         <div className="brand-logo-badge">
           <div className="brand-dot-pulse">
@@ -70,9 +78,30 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
           </div>
           <div className="brand-text-group">
             <span className="brand-title">SWAMI KRUPA ROADLINES</span>
-            <span className="brand-subtitle">TAX INVOICE GENERATOR</span>
+            <span className="brand-subtitle">
+              {isLR ? 'GOODS CONSIGNMENT NOTE (e-LR)' : 'TAX INVOICE GENERATOR'}
+            </span>
           </div>
-          <span className="brand-pro-tag">PRO</span>
+        </div>
+
+        {/* Top-Level Document Mode Selector */}
+        <div className="doc-mode-switcher-pill">
+          <button
+            type="button"
+            className={`doc-mode-btn ${!isLR ? 'active' : ''}`}
+            onClick={() => onDocTypeChange('invoice')}
+            title="Switch to Tax Invoice Generator"
+          >
+            <FileText size={14} /> Tax Invoice
+          </button>
+          <button
+            type="button"
+            className={`doc-mode-btn ${isLR ? 'active' : ''}`}
+            onClick={() => onDocTypeChange('lr')}
+            title="Switch to e-LR & Consignment Note Generator"
+          >
+            <ClipboardList size={14} /> e-LR / Bilty
+          </button>
         </div>
       </div>
 
@@ -137,22 +166,10 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
           type="button"
           className="btn-header btn-header-ghost"
           onClick={onOpenSavedModal}
-          title="Saved Bills History"
+          title={isLR ? `Saved e-LRs (${savedLRCount})` : `Saved Bills (${savedCount})`}
         >
-          <FolderOpen size={14} /> Bills ({savedCount})
+          <FolderOpen size={14} /> {isLR ? `e-LRs (${savedLRCount})` : `Bills (${savedCount})`}
         </button>
-
-        {onOpenLRModal && (
-          <button
-            type="button"
-            className="btn-header btn-header-ghost"
-            onClick={onOpenLRModal}
-            title="Create and print Goods Consignment Note (e-LR / Bilty)"
-            style={{ color: '#60a5fa', borderColor: '#3b82f6' }}
-          >
-            <Sparkles size={14} /> e-LR / Bilty
-          </button>
-        )}
 
         {onOpenTripSlipModal && (
           <button
@@ -170,16 +187,16 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
           type="button"
           className="btn-header btn-header-ghost"
           onClick={onNewInvoice}
-          title="Create New Bill"
+          title={isLR ? 'Create New e-LR Note' : 'Create New Tax Bill'}
         >
-          <PlusCircle size={14} /> New Bill
+          <PlusCircle size={14} /> {isLR ? 'New e-LR' : 'New Bill'}
         </button>
 
         <button
           type="button"
           className="btn-header btn-header-whatsapp"
           onClick={onWhatsAppShare}
-          title="Share Bill Breakdown on WhatsApp"
+          title="Share Document on WhatsApp"
         >
           <Share2 size={14} /> WhatsApp
         </button>
@@ -198,12 +215,12 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
           type="button"
           className="btn-header btn-header-save"
           onClick={onSaveInvoice}
-          title="Save Bill to Local Storage"
+          title="Save Record"
         >
           <Save size={14} /> Save
         </button>
 
-        {onSaveAndNextInvoice && (
+        {!isLR && onSaveAndNextInvoice && (
           <button
             type="button"
             className="btn-header btn-header-save-next"
