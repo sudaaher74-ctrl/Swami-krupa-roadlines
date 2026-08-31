@@ -14,6 +14,9 @@ import { InvoiceEditor } from './components/InvoiceEditor';
 import { SavedInvoicesModal } from './components/SavedInvoicesModal';
 import { DirectoryModal } from './components/DirectoryModal';
 import { TripSlipModal } from './components/TripSlipModal';
+import { PartyLedgerModal } from './components/PartyLedgerModal';
+import { BackupRestoreModal } from './components/BackupRestoreModal';
+import { type FullSystemBackup } from './utils/storageUtils';
 import { ConsignmentNoteEditor } from './components/ConsignmentNoteEditor';
 import { ConsignmentNoteDocument } from './components/ConsignmentNoteDocument';
 import { SavedConsignmentNotesModal } from './components/SavedConsignmentNotesModal';
@@ -144,6 +147,8 @@ export const App: React.FC = () => {
   const [isSavedLRModalOpen, setIsSavedLRModalOpen] = useState(false);
   const [isDirectoryModalOpen, setIsDirectoryModalOpen] = useState(false);
   const [isTripSlipModalOpen, setIsTripSlipModalOpen] = useState(false);
+  const [isLedgerModalOpen, setIsLedgerModalOpen] = useState(false);
+  const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'split' | 'preview' | 'editor'>('split');
   const [zoom, setZoom] = useState<number>(0.92);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -341,6 +346,106 @@ export const App: React.FC = () => {
     setCurrentInvoice(newInv);
     setActiveDocType('invoice');
     showToast(`Created Bill #${newBillNo} from LR #${lr.lrNo}`);
+  };
+
+  const handleConvertMultipleLRsToInvoice = (selectedNotes: ConsignmentNote[]) => {
+    if (selectedNotes.length === 0) return;
+    const nextBillNo = calculateNextBillNumber(savedInvoices);
+    const primaryParty =
+      selectedNotes[0]?.consigneeName || selectedNotes[0]?.consignorName || 'CONSOLIDATED CLIENT';
+
+    const items = selectedNotes.map((n, idx) => {
+      const containerStr = n.containerNo
+        ? `${n.containerNo}\n${n.packagesCount || ''}`.trim()
+        : n.packagesCount || '';
+      const routeText =
+        n.fromLocation && n.toLocation
+          ? `${n.fromLocation} TO ${n.toLocation}`
+          : n.description || 'FREIGHT CHARGES';
+
+      return {
+        id: `batch-item-${Date.now()}-${idx}`,
+        sn: String(idx + 1),
+        date: n.date || currentInvoice.date,
+        vehicleNo: n.vehicleNo || '',
+        containerNo: containerStr,
+        particulars: `LR: ${n.lrNo || '-'} • ${routeText}`.toUpperCase(),
+        weight: n.senderWeight || 'FIXED',
+        advance: '',
+        amount: n.totalFreightAmount || n.freightAmount || ('' as any),
+      };
+    });
+
+    const lrNumbers = selectedNotes
+      .map((n) => n.lrNo)
+      .filter(Boolean)
+      .join(', ');
+
+    const newInv: InvoiceData = {
+      ...createNewInvoice(nextBillNo, currentInvoice.company, currentInvoice.bank),
+      clientName: primaryParty,
+      beNo: lrNumbers,
+      beDate: selectedNotes[0]?.date || new Date().toISOString().slice(0, 10),
+      refDocType: 'LR NOS',
+      items,
+      advanceDeduction: 0,
+    };
+
+    setCurrentInvoice(newInv);
+    setActiveDocType('invoice');
+    showToast(`Created Consolidated Bill with ${selectedNotes.length} LRs!`);
+  };
+
+  const handleRestoreFullBackup = (backup: FullSystemBackup, mode: 'replace' | 'merge') => {
+    if (mode === 'replace') {
+      if (backup.invoices && backup.invoices.length > 0) {
+        setSavedInvoices(backup.invoices);
+        setCurrentInvoice(backup.invoices[0]);
+      }
+      if (backup.consignmentNotes && backup.consignmentNotes.length > 0) {
+        setConsignmentNotes(backup.consignmentNotes);
+        setCurrentConsignmentNote(backup.consignmentNotes[0]);
+      }
+      if (backup.customers) setCustomers(backup.customers);
+      if (backup.vehicles) setVehicles(backup.vehicles);
+      if (backup.tripSlips) setTripSlips(backup.tripSlips);
+      if (backup.companyProfile) {
+        handleSaveAsDefaultProfile(backup.companyProfile);
+      }
+    } else {
+      // Merge unique by ID
+      const existingInvIds = new Set(savedInvoices.map((i) => i.id));
+      const newInvoices = backup.invoices.filter((i) => !existingInvIds.has(i.id));
+      setSavedInvoices([...newInvoices, ...savedInvoices]);
+
+      const existingLRIds = new Set(consignmentNotes.map((l) => l.id));
+      const newLRs = backup.consignmentNotes.filter((l) => !existingLRIds.has(l.id));
+      setConsignmentNotes([...newLRs, ...consignmentNotes]);
+
+      const existingCustIds = new Set(customers.map((c) => c.id));
+      const newCusts = backup.customers.filter((c) => !existingCustIds.has(c.id));
+      setCustomers([...newCusts, ...customers]);
+
+      const existingVehIds = new Set(vehicles.map((v) => v.id));
+      const newVehs = backup.vehicles.filter((v) => !existingVehIds.has(v.id));
+      setVehicles([...newVehs, ...vehicles]);
+
+      const existingSlipIds = new Set(tripSlips.map((s) => s.id));
+      const newSlips = backup.tripSlips.filter((s) => !existingSlipIds.has(s.id));
+      setTripSlips([...newSlips, ...tripSlips]);
+    }
+    showToast('Restored backup data successfully!');
+  };
+
+  const handleResetToDemo = () => {
+    setSavedInvoices([defaultInvoice]);
+    setCurrentInvoice(defaultInvoice);
+    setConsignmentNotes([defaultConsignmentNote]);
+    setCurrentConsignmentNote(defaultConsignmentNote);
+    setCustomers(defaultCustomersList);
+    setVehicles(defaultVehiclesList);
+    setTripSlips(defaultTripSlipsList);
+    showToast('Reset to default demo data!');
   };
 
   // --- UNIFIED EXPORT & PRINT ACTIONS ---
@@ -588,6 +693,8 @@ export const App: React.FC = () => {
         }}
         onOpenDirectoryModal={() => setIsDirectoryModalOpen(true)}
         onOpenTripSlipModal={() => setIsTripSlipModalOpen(true)}
+        onOpenLedgerModal={() => setIsLedgerModalOpen(true)}
+        onOpenBackupModal={() => setIsBackupModalOpen(true)}
         savedCount={savedInvoices.length}
         savedLRCount={consignmentNotes.length}
         zoom={zoom}
@@ -700,6 +807,7 @@ export const App: React.FC = () => {
         onDuplicateNote={handleDuplicateLR}
         onDeleteNote={handleDeleteLR}
         onConvertToInvoice={handleConvertLRToInvoice}
+        onConvertMultipleLRsToInvoice={handleConvertMultipleLRsToInvoice}
         onNewNote={handleNewLR}
       />
 
@@ -727,6 +835,35 @@ export const App: React.FC = () => {
         onDeleteTripSlip={handleDeleteTripSlip}
         vehicles={vehicles}
         company={currentInvoice.company}
+      />
+
+      {/* Party Ledger & Khata Modal */}
+      <PartyLedgerModal
+        isOpen={isLedgerModalOpen}
+        onClose={() => setIsLedgerModalOpen(false)}
+        invoices={savedInvoices}
+        customers={customers}
+        onUpdatePayment={handleUpdateInvoicePayment}
+        onSelectInvoice={(inv) => {
+          handleSelectInvoice(inv);
+          setActiveDocType('invoice');
+        }}
+      />
+
+      {/* Backup & Restore Modal */}
+      <BackupRestoreModal
+        isOpen={isBackupModalOpen}
+        onClose={() => setIsBackupModalOpen(false)}
+        data={{
+          invoices: savedInvoices,
+          consignmentNotes: consignmentNotes,
+          customers: customers,
+          vehicles: vehicles,
+          tripSlips: tripSlips,
+          companyProfile: currentInvoice.company,
+        }}
+        onRestoreBackup={handleRestoreFullBackup}
+        onResetToDemo={handleResetToDemo}
       />
     </div>
   );

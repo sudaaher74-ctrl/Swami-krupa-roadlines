@@ -30,6 +30,8 @@ interface HeaderBarProps {
   onOpenSavedModal: () => void;
   onOpenDirectoryModal: () => void;
   onOpenTripSlipModal?: () => void;
+  onOpenLedgerModal?: () => void;
+  onOpenBackupModal?: () => void;
   savedCount: number;
   savedLRCount?: number;
   zoom: number;
@@ -54,6 +56,8 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   onOpenSavedModal,
   onOpenDirectoryModal,
   onOpenTripSlipModal,
+  onOpenLedgerModal,
+  onOpenBackupModal,
   savedCount,
   savedLRCount = 0,
   zoom,
@@ -155,6 +159,19 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
             <span>Directory</span>
           </button>
 
+          {onOpenLedgerModal && (
+            <button
+              type="button"
+              className="btn-header btn-header-ghost"
+              onClick={onOpenLedgerModal}
+              title="Customer Khata & Payment Outstanding Ledger"
+              style={{ color: '#34d399' }}
+            >
+              <FileText size={13} />
+              <span>Khata</span>
+            </button>
+          )}
+
           <button
             type="button"
             className="btn-header btn-header-ghost"
@@ -175,6 +192,17 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
             >
               <Fuel size={13} />
               <span>Trip Slips</span>
+            </button>
+          )}
+
+          {onOpenBackupModal && (
+            <button
+              type="button"
+              className="btn-header btn-header-ghost"
+              onClick={onOpenBackupModal}
+              title="Backup & Restore Vault"
+            >
+              <span>💾 Backup</span>
             </button>
           )}
 

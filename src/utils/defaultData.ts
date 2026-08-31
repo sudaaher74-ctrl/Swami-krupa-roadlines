@@ -68,7 +68,11 @@ export const defaultInvoice: InvoiceData = {
   updatedAt: new Date().toISOString()
 };
 
-export function createNewInvoice(billNumber?: string): InvoiceData {
+export function createNewInvoice(
+  billNumber?: string,
+  customCompany?: CompanyProfile,
+  customBank?: BankDetails
+): InvoiceData {
   const today = new Date();
   const dd = String(today.getDate()).padStart(2, '0');
   const mm = String(today.getMonth() + 1).padStart(2, '0');
@@ -97,8 +101,8 @@ export function createNewInvoice(billNumber?: string): InvoiceData {
         amount: ''
       }
     ],
-    company: { ...defaultCompanyProfile },
-    bank: { ...defaultBankDetails },
+    company: customCompany ? { ...customCompany } : { ...defaultCompanyProfile },
+    bank: customBank ? { ...customBank } : { ...defaultBankDetails },
     advanceDeduction: 0,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
