@@ -666,22 +666,24 @@ export const ConsignmentNoteEditor: React.FC<ConsignmentNoteEditorProps> = ({
       )}
 
       {/* Bottom Summary Bar identical to InvoiceEditor */}
-      <div className="editor-bottom-bar">
-        <div className="totals-summary-inline">
-          <div className="summary-metric">
-            <span className="metric-label">COPY</span>
-            <span className="metric-value text-blue">{note.copyType.replace(' COPY', '')}</span>
-          </div>
-          <div className="summary-metric">
-            <span className="metric-label">GST BY</span>
-            <span className="metric-value">{note.gstPayableBy}</span>
-          </div>
-          <div className="summary-metric">
-            <span className="metric-label">FREIGHT</span>
-            <span className="metric-value text-success">
-              {note.totalFreightAmount ? `₹${note.totalFreightAmount}` : note.freightType}
-            </span>
-          </div>
+      <div className="editor-footer-summary">
+        <div className="metric-box">
+          <span className="metric-label">COPY</span>
+          <span className="metric-value" style={{ color: '#60a5fa', fontSize: '12px' }}>
+            {note.copyType.replace(' COPY', '')}
+          </span>
+        </div>
+        <div className="metric-box">
+          <span className="metric-label">GST BY</span>
+          <span className="metric-value" style={{ fontSize: '12px' }}>
+            {note.gstPayableBy}
+          </span>
+        </div>
+        <div className="metric-box highlight">
+          <span className="metric-label">FREIGHT</span>
+          <span className="metric-value" style={{ fontSize: '13px' }}>
+            {note.totalFreightAmount ? `₹${note.totalFreightAmount}` : note.freightType}
+          </span>
         </div>
 
         {onConvertToInvoice && (
@@ -691,7 +693,7 @@ export const ConsignmentNoteEditor: React.FC<ConsignmentNoteEditorProps> = ({
             onClick={() => onConvertToInvoice(note)}
             title="Create Tax Invoice pre-populated from this LR"
           >
-            <ArrowRight size={14} /> Make Bill
+            <ArrowRight size={13} /> Make Bill
           </button>
         )}
       </div>
