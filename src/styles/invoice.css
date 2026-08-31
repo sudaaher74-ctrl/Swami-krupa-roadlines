@@ -134,11 +134,66 @@
 .invoice-meta-section {
   border-bottom: 2px solid #000000;
   padding: 6px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
 }
 
+/* New client-block layout: name+address left, billno+date right */
+.invoice-meta-client-block {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.invoice-meta-client-left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.invoice-meta-ms-row {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.invoice-meta-address-lines {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  padding-left: 2px;
+}
+
+.invoice-meta-beno-row {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  font-size: 13.5px;
+  font-weight: bold;
+  margin-top: 2px;
+}
+
+.invoice-meta-client-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 220px;
+}
+
+.invoice-meta-billno-row,
+.invoice-meta-date-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+/* Legacy row styles (kept for other uses) */
 .invoice-meta-row {
   display: flex;
   justify-content: space-between;
