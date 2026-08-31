@@ -168,6 +168,11 @@
   white-space: nowrap;
 }
 
+.meta-val-address {
+  font-weight: 600;
+  font-size: 13px;
+}
+
 .meta-dt-label {
   margin: 0 4px;
 }

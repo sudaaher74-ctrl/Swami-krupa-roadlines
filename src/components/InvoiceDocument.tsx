@@ -158,6 +158,24 @@ export const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
             </div>
           </div>
 
+          {/* Row 1b: Customer Address */}
+          {invoice.clientAddress && (
+            <div className="invoice-meta-row invoice-address-meta-row">
+              <div className="invoice-meta-left">
+                <span className="meta-label">Address : </span>
+                <span
+                  className="meta-val-address"
+                  contentEditable={isEditableInline}
+                  suppressContentEditableWarning
+                  onBlur={(e) => handleTextChange('clientAddress', e.currentTarget.innerText)}
+                  style={{ outline: isEditableInline ? '1px dashed #999' : 'none', minWidth: '200px', display: 'inline-block' }}
+                >
+                  {invoice.clientAddress}
+                </span>
+              </div>
+            </div>
+          )}
+
           {/* Row 2: BE NO / INVOICE NO & DATE */}
           <div className="invoice-meta-row">
             <div className="invoice-meta-left">

@@ -36,6 +36,7 @@ export interface InvoiceData {
   title: string; // e.g. "TAX INVOICE"
   clientName: string; // e.g. "ADNISHA TRANSPORT"
   clientPhone?: string; // e.g. "+91 9876543210"
+  clientAddress?: string; // e.g. "Shop No 5, Ground Floor, Panvel"
   billNo: string; // e.g. "122/ 2026-27"
   date: string; // e.g. "22-08-2026"
   beNo: string; // e.g. "3188241"

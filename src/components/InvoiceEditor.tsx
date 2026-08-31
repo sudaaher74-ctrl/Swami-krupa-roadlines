@@ -170,6 +170,9 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
     if (found && found.phone) {
       copy.clientPhone = found.phone;
     }
+    if (found && found.address) {
+      copy.clientAddress = found.address;
+    }
     copy.updatedAt = new Date().toISOString();
     onChange(copy);
   };
@@ -467,6 +470,17 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
                   onChange={(e) => updateInvoice('clientPhone', e.target.value)}
                 />
               </div>
+            </div>
+
+            <div className="form-group col-12">
+              <label>Customer Address (shown on bill)</label>
+              <input
+                type="text"
+                value={invoice.clientAddress || ''}
+                placeholder="Enter customer address"
+                style={{ textTransform: 'uppercase' }}
+                onChange={(e) => updateInvoice('clientAddress', e.target.value.toUpperCase())}
+              />
             </div>
 
             <div className="form-group col-6">
