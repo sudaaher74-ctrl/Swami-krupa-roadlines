@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b1120" />
+      <stop offset="50%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#1e293b" />
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#2563eb" />
+    </linearGradient>
+    <linearGradient id="redGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f87171" />
+      <stop offset="100%" stop-color="#dc2626" />
+    </linearGradient>
+  </defs>
+
+  <!-- Rounded App Background -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)" stroke="#334155" stroke-width="8" />
+
+  <!-- Outer Ring -->
+  <circle cx="256" cy="256" r="190" fill="none" stroke="#2563eb" stroke-width="4" stroke-dasharray="12 8" opacity="0.4" />
+
+  <!-- Truck Cab & Body Container -->
+  <g transform="translate(96, 140)">
+    <!-- Container Box -->
+    <rect x="10" y="40" width="190" height="130" rx="10" fill="url(#accentGrad)" />
+    <!-- Container Corrugation Lines -->
+    <line x1="45" y1="45" x2="45" y2="165" stroke="#ffffff" stroke-width="4" opacity="0.35" />
+    <line x1="80" y1="45" x2="80" y2="165" stroke="#ffffff" stroke-width="4" opacity="0.35" />
+    <line x1="115" y1="45" x2="115" y2="165" stroke="#ffffff" stroke-width="4" opacity="0.35" />
+    <line x1="150" y1="45" x2="150" y2="165" stroke="#ffffff" stroke-width="4" opacity="0.35" />
+    <line x1="185" y1="45" x2="185" y2="165" stroke="#ffffff" stroke-width="4" opacity="0.35" />
+
+    <!-- "SK" Logo on Container -->
+    <text x="105" y="118" fill="#ffffff" font-family="system-ui, sans-serif" font-size="44" font-weight="900" text-anchor="middle" letter-spacing="2">SK</text>
+
+    <!-- Truck Cabin -->
+    <path d="M 205 80 L 260 80 L 295 125 L 295 170 L 205 170 Z" fill="url(#redGrad)" />
+    <!-- Cabin Window -->
+    <path d="M 215 90 L 255 90 L 280 120 L 215 120 Z" fill="#e0f2fe" opacity="0.9" />
+
+    <!-- Chassis Base -->
+    <rect x="0" y="170" width="305" height="14" rx="4" fill="#64748b" />
+
+    <!-- Wheels -->
+    <!-- Front Wheel -->
+    <circle cx="260" cy="188" r="28" fill="#0f172a" stroke="#94a3b8" stroke-width="6" />
+    <circle cx="260" cy="188" r="12" fill="#e2e8f0" />
+    <!-- Rear Tandem Wheels -->
+    <circle cx="60" cy="188" r="28" fill="#0f172a" stroke="#94a3b8" stroke-width="6" />
+    <circle cx="60" cy="188" r="12" fill="#e2e8f0" />
+    <circle cx="125" cy="188" r="28" fill="#0f172a" stroke="#94a3b8" stroke-width="6" />
+    <circle cx="125" cy="188" r="12" fill="#e2e8f0" />
+  </g>
+
+  <!-- Swami Krupa Roadlines Title -->
+  <text x="256" y="415" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="28" font-weight="800" text-anchor="middle" letter-spacing="1">SWAMI KRUPA</text>
+  <text x="256" y="445" fill="#38bdf8" font-family="system-ui, sans-serif" font-size="16" font-weight="600" text-anchor="middle" letter-spacing="4">ROADLINES</text>
+</svg>

@@ -1,0 +1,19 @@
+{
+  "name": "Swami Krupa Roadlines - Transport Studio",
+  "short_name": "Swami Krupa",
+  "description": "Tax Invoicing, Goods Consignment Notes (e-LR), Customer Khata & Fleet Management Studio for Swami Krupa Roadlines.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b1120",
+  "theme_color": "#0b1120",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "finance", "productivity", "utilities"]
+}

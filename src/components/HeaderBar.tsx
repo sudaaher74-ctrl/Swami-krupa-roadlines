@@ -26,6 +26,7 @@ interface HeaderBarProps {
   onSaveAndNextInvoice?: () => void;
   onPrint: () => void;
   onDownloadPDF: () => void;
+  onDownloadAllLRCopiesPDF?: () => void;
   onWhatsAppShare: () => void;
   onOpenSavedModal: () => void;
   onOpenDirectoryModal: () => void;
@@ -52,6 +53,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   onSaveAndNextInvoice,
   onPrint,
   onDownloadPDF,
+  onDownloadAllLRCopiesPDF,
   onWhatsAppShare,
   onOpenSavedModal,
   onOpenDirectoryModal,
@@ -244,11 +246,25 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
             className="btn-header btn-header-pdf"
             onClick={onDownloadPDF}
             disabled={isDownloadingPDF}
-            title="Download Clean A4 PDF"
+            title={isLR ? 'Download Current A4 e-LR PDF' : 'Download Clean A4 Invoice PDF'}
           >
             <Download size={13} />
             <span>{isDownloadingPDF ? 'Exporting...' : 'PDF'}</span>
           </button>
+
+          {isLR && onDownloadAllLRCopiesPDF && (
+            <button
+              type="button"
+              className="btn-header btn-header-save-next"
+              onClick={onDownloadAllLRCopiesPDF}
+              disabled={isDownloadingPDF}
+              title="Download 3-page PDF with Consignor, Consignee & Driver copies"
+              style={{ background: 'linear-gradient(135deg, #4f46e5, #6366f1)' }}
+            >
+              <Download size={13} />
+              <span>3-in-1 PDF</span>
+            </button>
+          )}
 
           <button
             type="button"

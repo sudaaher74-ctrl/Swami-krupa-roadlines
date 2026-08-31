@@ -16,7 +16,11 @@ import {
   Square,
   Layers
 } from 'lucide-react';
-import { downloadConsignmentNotePDF, openConsignmentWhatsAppShare } from '../utils/exportUtils';
+import {
+  downloadConsignmentNotePDF,
+  downloadAllLRCopiesPDF,
+  openConsignmentWhatsAppShare,
+} from '../utils/exportUtils';
 
 interface SavedConsignmentNotesModalProps {
   isOpen: boolean;
@@ -384,10 +388,19 @@ export const SavedConsignmentNotesModal: React.FC<SavedConsignmentNotesModalProp
                           type="button"
                           className="btn-icon"
                           style={{ padding: '4px', height: '24px', width: '24px' }}
-                          title="Download PDF"
+                          title="Download PDF (Current Copy)"
                           onClick={() => downloadConsignmentNotePDF(note)}
                         >
                           <Download size={12} style={{ color: '#38bdf8' }} />
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-icon"
+                          style={{ padding: '4px', height: '24px', width: '24px' }}
+                          title="Download 3-in-1 PDF (Consignor + Consignee + Driver)"
+                          onClick={() => downloadAllLRCopiesPDF(note)}
+                        >
+                          <Layers size={12} style={{ color: '#818cf8' }} />
                         </button>
                         <button
                           type="button"

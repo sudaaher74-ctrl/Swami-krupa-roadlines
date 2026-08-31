@@ -24,6 +24,7 @@ import {
   downloadInvoicePDF,
   openWhatsAppShare,
   downloadConsignmentNotePDF,
+  downloadAllLRCopiesPDF,
   openConsignmentWhatsAppShare,
 } from './utils/exportUtils';
 import { CheckCircle2 } from 'lucide-react';
@@ -472,6 +473,20 @@ export const App: React.FC = () => {
     }
   };
 
+  const handleDownloadAllLRCopiesPDF = async () => {
+    try {
+      setIsDownloadingPDF(true);
+      showToast('Generating 3-in-1 (Consignor + Consignee + Driver) PDF...');
+      await downloadAllLRCopiesPDF(currentConsignmentNote);
+      showToast('3-in-1 LR PDF downloaded successfully!');
+    } catch (err) {
+      console.error(err);
+      alert('Could not generate 3-in-1 PDF.');
+    } finally {
+      setIsDownloadingPDF(false);
+    }
+  };
+
   const handleWhatsAppShare = () => {
     if (activeDocType === 'lr') {
       openConsignmentWhatsAppShare(currentConsignmentNote);
@@ -683,6 +698,7 @@ export const App: React.FC = () => {
         onSaveAndNextInvoice={activeDocType === 'invoice' ? handleSaveAndNextInvoice : undefined}
         onPrint={handlePrint}
         onDownloadPDF={handleDownloadPDF}
+        onDownloadAllLRCopiesPDF={handleDownloadAllLRCopiesPDF}
         onWhatsAppShare={handleWhatsAppShare}
         onOpenSavedModal={() => {
           if (activeDocType === 'lr') {

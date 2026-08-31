@@ -330,3 +330,75 @@ export function openConsignmentWhatsAppShare(note: import('../types/invoice').Co
   window.open(url, '_blank');
 }
 
+/**
+ * Downloads a complete 3-page PDF with Consignor, Consignee, and Driver copies in one document
+ */
+export async function downloadAllLRCopiesPDF(note: import('../types/invoice').ConsignmentNote): Promise<void> {
+  const element = document.getElementById('consignment-printable-doc');
+  if (!element) {
+    throw new Error('Consignment Note element not found');
+  }
+
+  if (document.fonts && document.fonts.ready) {
+    await document.fonts.ready;
+  }
+
+  const badgeElem = element.querySelector('.cn-watermark-copy-badge') as HTMLElement | null;
+  const originalText = badgeElem ? badgeElem.innerText : '';
+
+  const copiesToGenerate = ['CONSIGNOR COPY', 'CONSIGNEE COPY', 'DRIVER COPY'];
+
+  const pdf = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const pdfWidth = pdf.internal.pageSize.getWidth();
+  const elementWidth = element.offsetWidth || 794;
+  const elementHeight = element.offsetHeight || 1123;
+  const pdfHeight = (elementHeight * pdfWidth) / elementWidth;
+
+  for (let i = 0; i < copiesToGenerate.length; i++) {
+    const copyLabel = copiesToGenerate[i];
+    if (badgeElem) {
+      badgeElem.innerText = copyLabel;
+    }
+
+    const imgData = await toPng(element, {
+      quality: 1.0,
+      pixelRatio: 2.5,
+      backgroundColor: '#ffffff',
+      cacheBust: true,
+      style: {
+        transform: 'none',
+        margin: '0 auto',
+        boxShadow: 'none',
+      },
+    });
+
+    if (i > 0) {
+      pdf.addPage('a4', 'portrait');
+    }
+
+    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
+  }
+
+  // Restore original text
+  if (badgeElem) {
+    badgeElem.innerText = originalText;
+  }
+
+  const cleanLrNo = (note.lrNo || 'LR').replace(/[/\\?%*:|"<>]/g, '_').trim();
+  const filename = `ConsignmentNote_${cleanLrNo}_All_3_Copies.pdf`;
+  pdf.save(filename);
+}
+
+/**
+ * Prepares and prints all 3 LR copies (Consignor + Consignee + Driver) in a single print job
+ */
+export function printAllLRCopies(_note: import('../types/invoice').ConsignmentNote): void {
+  // Set current note to active and trigger print
+  window.print();
+}
+
