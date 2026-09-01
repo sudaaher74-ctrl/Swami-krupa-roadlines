@@ -30,6 +30,15 @@ import {
 import { CheckCircle2 } from 'lucide-react';
 import './styles/app.css';
 
+import {
+  fetchInvoices, saveInvoice, deleteInvoice,
+  fetchConsignmentNotes, saveConsignmentNote, deleteConsignmentNote,
+  fetchCustomers, saveCustomer, deleteCustomer,
+  fetchVehicles, saveVehicle, deleteVehicle,
+  fetchTripSlips, saveTripSlip, deleteTripSlip
+} from './utils/supabaseService';
+
+
 const LOCAL_STORAGE_KEY_INVOICES = 'swami_krupa_saved_invoices_v1';
 const LOCAL_STORAGE_KEY_CUSTOMERS = 'swami_krupa_saved_customers_v1';
 const LOCAL_STORAGE_KEY_VEHICLES = 'swami_krupa_saved_vehicles_v1';
@@ -155,12 +164,41 @@ export const App: React.FC = () => {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isDownloadingPDF, setIsDownloadingPDF] = useState(false);
 
+
   // Sync state to localStorage
   useEffect(() => {
     try {
       localStorage.setItem(LOCAL_STORAGE_KEY_INVOICES, JSON.stringify(savedInvoices));
     } catch (e) {}
   }, [savedInvoices]);
+
+  // Supabase Initial Fetch
+  useEffect(() => {
+    const initData = async () => {
+      const invs = await fetchInvoices();
+      if (invs.length > 0) {
+          setSavedInvoices(invs);
+          if (invs.length > 0 && !invs.find(i => i.id === currentInvoice.id)) {
+            setCurrentInvoice(invs[0]);
+          }
+      }
+      const notes = await fetchConsignmentNotes();
+      if (notes.length > 0) {
+          setConsignmentNotes(notes);
+          if (notes.length > 0 && !notes.find(n => n.id === currentConsignmentNote.id)) {
+            setCurrentConsignmentNote(notes[0]);
+          }
+      }
+      const custs = await fetchCustomers();
+      if (custs.length > 0) setCustomers(custs);
+      const vehs = await fetchVehicles();
+      if (vehs.length > 0) setVehicles(vehs);
+      const slips = await fetchTripSlips();
+      if (slips.length > 0) setTripSlips(slips);
+    };
+    initData();
+  }, []);
+
 
   useEffect(() => {
     try {
@@ -203,9 +241,11 @@ export const App: React.FC = () => {
       const copy = [...savedInvoices];
       copy[existingIndex] = updated;
       setSavedInvoices(copy);
+      saveInvoice(updated);
       showToast(`Updated Bill #${updated.billNo} successfully!`);
     } else {
       setSavedInvoices([updated, ...savedInvoices]);
+      saveInvoice(updated);
       showToast(`Saved Bill #${updated.billNo} to records!`);
     }
   };
@@ -222,6 +262,7 @@ export const App: React.FC = () => {
       updatedList = [updated, ...savedInvoices];
     }
     setSavedInvoices(updatedList);
+    saveInvoice(updated);
 
     const nextBillNo = calculateNextBillNumber(updatedList, updated);
     recordBillSequenceNumber(nextBillNo);
@@ -273,9 +314,11 @@ export const App: React.FC = () => {
       const copy = [...consignmentNotes];
       copy[existingIndex] = updated;
       setConsignmentNotes(copy);
+      saveConsignmentNote(updated);
       showToast(`Updated e-LR #${updated.lrNo} successfully!`);
     } else {
       setConsignmentNotes([updated, ...consignmentNotes]);
+      saveConsignmentNote(updated);
       showToast(`Saved e-LR #${updated.lrNo} to records!`);
     }
   };
@@ -296,6 +339,7 @@ export const App: React.FC = () => {
       updatedAt: new Date().toISOString(),
     };
     setConsignmentNotes([duplicated, ...consignmentNotes]);
+    saveConsignmentNote(duplicated);
     setCurrentConsignmentNote(duplicated);
     showToast(`Duplicated into e-LR #${duplicated.lrNo}`);
   };
@@ -304,6 +348,7 @@ export const App: React.FC = () => {
     if (window.confirm('Are you sure you want to delete this e-LR note?')) {
       const filtered = consignmentNotes.filter((n) => n.id !== id);
       setConsignmentNotes(filtered);
+      deleteConsignmentNote(id);
       if (currentConsignmentNote.id === id) {
         setCurrentConsignmentNote(filtered.length > 0 ? filtered[0] : createNewConsignmentNote());
       }
@@ -512,6 +557,7 @@ export const App: React.FC = () => {
       updatedAt: new Date().toISOString(),
     };
     setSavedInvoices([duplicated, ...savedInvoices]);
+    saveInvoice(duplicated);
     setCurrentInvoice(duplicated);
     showToast(`Duplicated to new Bill #${newBillNo}`);
   };
@@ -519,6 +565,7 @@ export const App: React.FC = () => {
   const handleDeleteInvoice = (id: string) => {
     const filtered = savedInvoices.filter((inv) => inv.id !== id);
     setSavedInvoices(filtered);
+      deleteInvoice(id);
     if (currentInvoice.id === id) {
       setCurrentInvoice(filtered.length > 0 ? filtered[0] : createNewInvoice());
     }
@@ -547,6 +594,8 @@ export const App: React.FC = () => {
       return inv;
     });
     setSavedInvoices(updatedList);
+    const updatedInvoice = updatedList.find(i => i.id === id);
+    if (updatedInvoice) saveInvoice(updatedInvoice);
     if (currentInvoice.id === id) {
       setCurrentInvoice({ ...currentInvoice, ...updates, updatedAt: new Date().toISOString() });
     }
@@ -575,32 +624,38 @@ export const App: React.FC = () => {
   const handleAddCustomer = (c: Omit<CustomerRecord, 'id'>) => {
     const newCust: CustomerRecord = { ...c, id: 'cust-' + Date.now() };
     setCustomers([...customers, newCust]);
+    saveCustomer(newCust);
     showToast(`Added ${c.name} to directory!`);
   };
 
   const handleUpdateCustomer = (c: CustomerRecord) => {
     setCustomers(customers.map((cust) => (cust.id === c.id ? c : cust)));
+    saveCustomer(c);
     showToast(`Updated ${c.name}`);
   };
 
   const handleDeleteCustomer = (id: string) => {
     setCustomers(customers.filter((cust) => cust.id !== id));
+    deleteCustomer(id);
     showToast('Removed customer from directory');
   };
 
   const handleAddVehicle = (v: Omit<VehicleRecord, 'id'>) => {
     const newVeh: VehicleRecord = { ...v, id: 'veh-' + Date.now() };
     setVehicles([...vehicles, newVeh]);
+    saveVehicle(newVeh);
     showToast(`Added vehicle ${v.vehicleNo} to fleet!`);
   };
 
   const handleUpdateVehicle = (v: VehicleRecord) => {
     setVehicles(vehicles.map((veh) => (veh.id === v.id ? v : veh)));
+    saveVehicle(v);
     showToast(`Updated ${v.vehicleNo}`);
   };
 
   const handleDeleteVehicle = (id: string) => {
     setVehicles(vehicles.filter((veh) => veh.id !== id));
+    deleteVehicle(id);
     showToast('Removed vehicle from fleet');
   };
 
@@ -647,9 +702,11 @@ export const App: React.FC = () => {
       const copy = [...tripSlips];
       copy[existingIndex] = slip;
       setTripSlips(copy);
+      saveTripSlip(slip);
       showToast(`Updated Trip Slip #${slip.slipNo}`);
     } else {
       setTripSlips([slip, ...tripSlips]);
+      saveTripSlip(slip);
       showToast(`Saved Trip Slip #${slip.slipNo}`);
     }
   };
@@ -657,6 +714,7 @@ export const App: React.FC = () => {
   const handleDeleteTripSlip = (id: string) => {
     if (window.confirm('Are you sure you want to delete this trip slip?')) {
       setTripSlips(tripSlips.filter((s) => s.id !== id));
+      deleteTripSlip(id);
       showToast('Deleted trip slip');
     }
   };
