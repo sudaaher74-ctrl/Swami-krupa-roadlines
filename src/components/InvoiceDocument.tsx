@@ -145,20 +145,18 @@ export const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
               </span>
             </div>
 
-            {/* Address lines directly below name */}
-            {invoice.clientAddress && (
-              <div className="invoice-meta-address-lines">
-                <span
-                  className="meta-val-address"
-                  contentEditable={isEditableInline}
-                  suppressContentEditableWarning
-                  onBlur={(e) => handleTextChange('clientAddress', e.currentTarget.innerText)}
-                  style={{ outline: isEditableInline ? '1px dashed #999' : 'none', display: 'block', whiteSpace: 'pre-wrap' }}
-                >
-                  {invoice.clientAddress}
-                </span>
-              </div>
-            )}
+            {/* Address lines directly below name — always visible */}
+            <div className="invoice-meta-address-lines">
+              <span
+                className="meta-val-address"
+                contentEditable={isEditableInline}
+                suppressContentEditableWarning
+                onBlur={(e) => handleTextChange('clientAddress', e.currentTarget.innerText)}
+                style={{ outline: isEditableInline ? '1px dashed #999' : 'none', display: 'block', whiteSpace: 'pre-wrap', minHeight: '18px' }}
+              >
+                {invoice.clientAddress || ''}
+              </span>
+            </div>
 
             {/* BE NO row below address */}
             <div className="invoice-meta-beno-row">

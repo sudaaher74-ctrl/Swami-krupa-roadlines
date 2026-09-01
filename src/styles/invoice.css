@@ -453,6 +453,19 @@
   font-weight: bold;
 }
 
+/* Strip all contentEditable edit indicators when exporting/printing */
+.exporting [contenteditable],
+.exporting [contenteditable]:focus,
+.exporting [contenteditable]:hover {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  caret-color: transparent !important;
+}
+
 /* Printable Styles */
 @media print {
   @page {
@@ -474,6 +487,17 @@
   .editor-controls,
   .preview-toolbar {
     display: none !important;
+  }
+
+  /* Strip contentEditable borders for print */
+  [contenteditable],
+  [contenteditable]:focus,
+  [contenteditable]:hover {
+    outline: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    caret-color: transparent !important;
   }
 
   .invoice-page-container {

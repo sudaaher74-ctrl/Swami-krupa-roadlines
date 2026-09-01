@@ -17,41 +17,49 @@ export async function downloadInvoicePDF(invoice: InvoiceData): Promise<void> {
     await document.fonts.ready;
   }
 
-  // Render using native browser engine (SVG ForeignObject) for flawless typography and zero space collapse
-  const imgData = await toPng(element, {
-    quality: 1.0,
-    pixelRatio: 2.5,
-    backgroundColor: '#ffffff',
-    cacheBust: true,
-    style: {
-      transform: 'none',
-      margin: '0 auto',
-      boxShadow: 'none',
-    },
-  });
+  // Add 'exporting' class to strip all contentEditable outlines/borders via CSS
+  document.documentElement.classList.add('exporting');
 
-  // A4 dimensions in mm: 210 x 297
-  const pdf = new jsPDF({
-    orientation: 'portrait',
-    unit: 'mm',
-    format: 'a4',
-  });
+  try {
+    // Render using native browser engine (SVG ForeignObject) for flawless typography and zero space collapse
+    const imgData = await toPng(element, {
+      quality: 1.0,
+      pixelRatio: 2.5,
+      backgroundColor: '#ffffff',
+      cacheBust: true,
+      style: {
+        transform: 'none',
+        margin: '0 auto',
+        boxShadow: 'none',
+      },
+    });
 
-  const pdfWidth = pdf.internal.pageSize.getWidth();
-  const elementWidth = element.offsetWidth || 794;
-  const elementHeight = element.offsetHeight || 1123;
-  const pdfHeight = (elementHeight * pdfWidth) / elementWidth;
+    // A4 dimensions in mm: 210 x 297
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4',
+    });
 
-  pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const elementWidth = element.offsetWidth || 794;
+    const elementHeight = element.offsetHeight || 1123;
+    const pdfHeight = (elementHeight * pdfWidth) / elementWidth;
 
-  if (typeof window !== 'undefined') {
-    (window as any).__lastPdfDataUrl = imgData;
+    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
+
+    if (typeof window !== 'undefined') {
+      (window as any).__lastPdfDataUrl = imgData;
+    }
+
+    const cleanBillNo = (invoice.billNo || 'invoice').replace(/[/\\?%*:|"<>]/g, '_').trim();
+    const filename = `Invoice_${cleanBillNo}_${invoice.clientName || 'Transport'}.pdf`;
+    
+    pdf.save(filename);
+  } finally {
+    // Always remove the exporting class so the UI returns to normal
+    document.documentElement.classList.remove('exporting');
   }
-
-  const cleanBillNo = (invoice.billNo || 'invoice').replace(/[/\\?%*:|"<>]/g, '_').trim();
-  const filename = `Invoice_${cleanBillNo}_${invoice.clientName || 'Transport'}.pdf`;
-  
-  pdf.save(filename);
 }
 
 /**
@@ -214,34 +222,39 @@ export async function downloadTripSlipPDF(slipElementId: string, slipNo: string,
     await document.fonts.ready;
   }
 
-  const imgData = await toPng(element, {
-    quality: 1.0,
-    pixelRatio: 2.5,
-    backgroundColor: '#ffffff',
-    cacheBust: true,
-    style: {
-      transform: 'none',
-      margin: '0 auto',
-      boxShadow: 'none',
-    },
-  });
+  document.documentElement.classList.add('exporting');
+  try {
+    const imgData = await toPng(element, {
+      quality: 1.0,
+      pixelRatio: 2.5,
+      backgroundColor: '#ffffff',
+      cacheBust: true,
+      style: {
+        transform: 'none',
+        margin: '0 auto',
+        boxShadow: 'none',
+      },
+    });
 
-  const pdf = new jsPDF({
-    orientation: 'portrait',
-    unit: 'mm',
-    format: 'a5',
-  });
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a5',
+    });
 
-  const pdfWidth = pdf.internal.pageSize.getWidth();
-  const elementWidth = element.offsetWidth || 500;
-  const elementHeight = element.offsetHeight || 700;
-  const pdfHeight = (elementHeight * pdfWidth) / elementWidth;
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const elementWidth = element.offsetWidth || 500;
+    const elementHeight = element.offsetHeight || 700;
+    const pdfHeight = (elementHeight * pdfWidth) / elementWidth;
 
-  pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
+    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
 
-  const cleanSlipNo = (slipNo || 'slip').replace(/[/\\?%*:|"<>]/g, '_').trim();
-  const filename = `TripSlip_${cleanSlipNo}_${vehicleNo || 'Fleet'}.pdf`;
-  pdf.save(filename);
+    const cleanSlipNo = (slipNo || 'slip').replace(/[/\\?%*:|"<>]/g, '_').trim();
+    const filename = `TripSlip_${cleanSlipNo}_${vehicleNo || 'Fleet'}.pdf`;
+    pdf.save(filename);
+  } finally {
+    document.documentElement.classList.remove('exporting');
+  }
 }
 
 /**
@@ -257,34 +270,39 @@ export async function downloadConsignmentNotePDF(note: import('../types/invoice'
     await document.fonts.ready;
   }
 
-  const imgData = await toPng(element, {
-    quality: 1.0,
-    pixelRatio: 2.5,
-    backgroundColor: '#ffffff',
-    cacheBust: true,
-    style: {
-      transform: 'none',
-      margin: '0 auto',
-      boxShadow: 'none',
-    },
-  });
+  document.documentElement.classList.add('exporting');
+  try {
+    const imgData = await toPng(element, {
+      quality: 1.0,
+      pixelRatio: 2.5,
+      backgroundColor: '#ffffff',
+      cacheBust: true,
+      style: {
+        transform: 'none',
+        margin: '0 auto',
+        boxShadow: 'none',
+      },
+    });
 
-  const pdf = new jsPDF({
-    orientation: 'portrait',
-    unit: 'mm',
-    format: 'a4',
-  });
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4',
+    });
 
-  const pdfWidth = pdf.internal.pageSize.getWidth();
-  const elementWidth = element.offsetWidth || 794;
-  const elementHeight = element.offsetHeight || 1123;
-  const pdfHeight = (elementHeight * pdfWidth) / elementWidth;
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const elementWidth = element.offsetWidth || 794;
+    const elementHeight = element.offsetHeight || 1123;
+    const pdfHeight = (elementHeight * pdfWidth) / elementWidth;
 
-  pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
+    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
 
-  const cleanLrNo = (note.lrNo || 'LR').replace(/[/\\?%*:|"<>]/g, '_').trim();
-  const filename = `ConsignmentNote_${cleanLrNo}_${note.vehicleNo || 'Transport'}.pdf`;
-  pdf.save(filename);
+    const cleanLrNo = (note.lrNo || 'LR').replace(/[/\\?%*:|"<>]/g, '_').trim();
+    const filename = `ConsignmentNote_${cleanLrNo}_${note.vehicleNo || 'Transport'}.pdf`;
+    pdf.save(filename);
+  } finally {
+    document.documentElement.classList.remove('exporting');
+  }
 }
 
 /**
@@ -359,34 +377,38 @@ export async function downloadAllLRCopiesPDF(note: import('../types/invoice').Co
   const elementHeight = element.offsetHeight || 1123;
   const pdfHeight = (elementHeight * pdfWidth) / elementWidth;
 
-  for (let i = 0; i < copiesToGenerate.length; i++) {
-    const copyLabel = copiesToGenerate[i];
+  document.documentElement.classList.add('exporting');
+  try {
+    for (let i = 0; i < copiesToGenerate.length; i++) {
+      const copyLabel = copiesToGenerate[i];
+      if (badgeElem) {
+        badgeElem.innerText = copyLabel;
+      }
+
+      const imgData = await toPng(element, {
+        quality: 1.0,
+        pixelRatio: 2.5,
+        backgroundColor: '#ffffff',
+        cacheBust: true,
+        style: {
+          transform: 'none',
+          margin: '0 auto',
+          boxShadow: 'none',
+        },
+      });
+
+      if (i > 0) {
+        pdf.addPage('a4', 'portrait');
+      }
+
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
+    }
+  } finally {
+    document.documentElement.classList.remove('exporting');
+    // Restore original text
     if (badgeElem) {
-      badgeElem.innerText = copyLabel;
+      badgeElem.innerText = originalText;
     }
-
-    const imgData = await toPng(element, {
-      quality: 1.0,
-      pixelRatio: 2.5,
-      backgroundColor: '#ffffff',
-      cacheBust: true,
-      style: {
-        transform: 'none',
-        margin: '0 auto',
-        boxShadow: 'none',
-      },
-    });
-
-    if (i > 0) {
-      pdf.addPage('a4', 'portrait');
-    }
-
-    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
-  }
-
-  // Restore original text
-  if (badgeElem) {
-    badgeElem.innerText = originalText;
   }
 
   const cleanLrNo = (note.lrNo || 'LR').replace(/[/\\?%*:|"<>]/g, '_').trim();
