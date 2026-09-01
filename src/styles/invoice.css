@@ -458,7 +458,6 @@
 .exporting [contenteditable]:focus,
 .exporting [contenteditable]:hover {
   outline: none !important;
-  border: none !important;
   box-shadow: none !important;
   background: transparent !important;
   -webkit-user-select: none !important;
@@ -489,12 +488,11 @@
     display: none !important;
   }
 
-  /* Strip contentEditable borders for print */
+  /* Strip contentEditable edit indicators for print */
   [contenteditable],
   [contenteditable]:focus,
   [contenteditable]:hover {
     outline: none !important;
-    border: none !important;
     box-shadow: none !important;
     background: transparent !important;
     caret-color: transparent !important;
