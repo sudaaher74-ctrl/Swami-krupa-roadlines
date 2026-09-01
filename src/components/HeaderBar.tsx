@@ -113,12 +113,21 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
         <div className="segmented-pill-selector">
           <button
             type="button"
-            className={`pill-btn ${viewMode === 'split' ? 'active' : ''}`}
+            className={`pill-btn split-view-btn ${viewMode === 'split' ? 'active' : ''}`}
             onClick={() => onViewModeChange('split')}
             title="Split Editor & Preview"
           >
             <Layout size={13} />
             <span>Split</span>
+          </button>
+          <button
+            type="button"
+            className={`pill-btn ${viewMode === 'editor' ? 'active' : ''}`}
+            onClick={() => onViewModeChange('editor')}
+            title="Form Editor"
+          >
+            <FileText size={13} />
+            <span>Editor</span>
           </button>
           <button
             type="button"

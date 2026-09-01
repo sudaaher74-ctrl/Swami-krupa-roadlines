@@ -1020,3 +1020,71 @@ html, body, #root {
   outline: 1px dashed #2563eb;
 }
 
+/* ==========================================================================
+   Responsive Design / Mobile First Overrides
+   ========================================================================== */
+@media (max-width: 1024px) {
+  .app-header {
+    height: auto;
+    min-height: 56px;
+    padding: 8px 14px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .header-left, .header-center, .header-right {
+    flex-wrap: wrap;
+  }
+  
+  .header-actions-group .btn-header span {
+    display: none; /* Hide text on smaller screens to save space */
+  }
+  
+  .header-actions-group .btn-header {
+    padding: 5px 8px;
+  }
+  
+  .split-view-btn {
+    display: none; /* Hide split view button on mobile */
+  }
+  
+  .pill-btn span {
+    display: none; /* Hide pill button labels on mobile */
+  }
+  
+  .editor-sidebar-container {
+    width: 100%;
+    min-width: 100%;
+    max-width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--border-app);
+  }
+  
+  .form-grid-layout {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .col-2, .col-3, .col-4, .col-6, .col-8, .col-12 {
+    width: 100%;
+  }
+
+  .editor-footer-summary {
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  .modal-content, .trip-slip-modal-container {
+    width: 95%;
+    max-width: 95%;
+  }
+}
+
+@media (max-width: 640px) {
+  .brand-title {
+    display: none;
+  }
+  
+  .zoom-widget {
+    display: none;
+  }
+}

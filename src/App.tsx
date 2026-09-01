@@ -159,7 +159,9 @@ export const App: React.FC = () => {
   const [isTripSlipModalOpen, setIsTripSlipModalOpen] = useState(false);
   const [isLedgerModalOpen, setIsLedgerModalOpen] = useState(false);
   const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<'split' | 'preview' | 'editor'>('split');
+  const [viewMode, setViewMode] = useState<'split' | 'preview' | 'editor'>(
+    typeof window !== 'undefined' && window.innerWidth <= 1024 ? 'editor' : 'split'
+  );
   const [zoom, setZoom] = useState<number>(0.92);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isDownloadingPDF, setIsDownloadingPDF] = useState(false);
