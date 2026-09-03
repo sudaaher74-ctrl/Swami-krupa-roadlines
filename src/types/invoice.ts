@@ -29,6 +29,7 @@ export interface CompanyProfile {
   signatureForText: string; // e.g. "For SWAMI KRUPA ROADLINES"
   proprietorText: string; // e.g. "Proprietor"
   terms: string[];
+  logoUrl?: string;
 }
 
 export interface InvoiceData {

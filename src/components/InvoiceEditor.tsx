@@ -19,6 +19,7 @@ import {
 import { numberToIndianWords, formatCurrency } from '../utils/numberToWords';
 import { openWhatsAppShare } from '../utils/exportUtils';
 import { calculateNextBillNumber } from '../utils/billNumberUtils';
+import defaultLogo from '../logo.png';
 
 interface InvoiceEditorProps {
   invoice: InvoiceData;
@@ -652,6 +653,35 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
           </div>
 
           <div className="form-grid-layout">
+            <div className="form-group col-12">
+              <label>Company Brand Logo (Top-Left on Bill & LR)</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px', background: '#0f172a', padding: '10px 14px', borderRadius: '8px', border: '1px solid #334155' }}>
+                <div style={{ background: '#ffffff', padding: '6px 10px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <img
+                    src={invoice.company.logoUrl || defaultLogo}
+                    alt="Logo preview"
+                    style={{ height: '42px', width: 'auto', maxWidth: '85px', objectFit: 'contain' }}
+                  />
+                </div>
+                <div style={{ flex: 1, fontSize: '12px', color: '#94a3b8' }}>
+                  <div style={{ fontWeight: 600, color: '#f1f5f9', marginBottom: '2px' }}>
+                    Active Logo: {invoice.company.logoUrl ? 'Custom' : 'Official Swami Krupa Logo'}
+                  </div>
+                  <span>Automatically placed on the top-left of the Tax Invoice bill and Goods Consignment Note.</span>
+                </div>
+                {invoice.company.logoUrl && (
+                  <button
+                    type="button"
+                    className="btn-link-xs"
+                    style={{ color: '#ef4444' }}
+                    onClick={() => updateInvoice('company.logoUrl', undefined)}
+                  >
+                    Reset
+                  </button>
+                )}
+              </div>
+            </div>
+
             <div className="form-group col-12">
               <label>Top Jurisdiction Line</label>
               <input

@@ -12,10 +12,14 @@ export async function downloadInvoicePDF(invoice: InvoiceData): Promise<void> {
     throw new Error('Invoice document element not found');
   }
 
-  // Ensure fonts are fully loaded before capturing
+  // Ensure fonts and images are fully loaded before capturing
   if (document.fonts && document.fonts.ready) {
     await document.fonts.ready;
   }
+  const images = Array.from(element.querySelectorAll('img'));
+  await Promise.all(
+    images.map((img) => (img.complete ? Promise.resolve() : new Promise((r) => { img.onload = r; img.onerror = r; })))
+  );
 
   // Add 'exporting' class to strip all contentEditable outlines/borders via CSS
   document.documentElement.classList.add('exporting');
@@ -269,6 +273,10 @@ export async function downloadConsignmentNotePDF(note: import('../types/invoice'
   if (document.fonts && document.fonts.ready) {
     await document.fonts.ready;
   }
+  const images = Array.from(element.querySelectorAll('img'));
+  await Promise.all(
+    images.map((img) => (img.complete ? Promise.resolve() : new Promise((r) => { img.onload = r; img.onerror = r; })))
+  );
 
   document.documentElement.classList.add('exporting');
   try {

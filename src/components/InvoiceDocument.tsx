@@ -1,6 +1,7 @@
 import React from 'react';
 import type { InvoiceData } from '../types/invoice';
 import { numberToIndianWords, formatCurrency } from '../utils/numberToWords';
+import defaultLogo from '../logo.png';
 
 interface InvoiceDocumentProps {
   invoice: InvoiceData;
@@ -36,6 +37,8 @@ export const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
     }
   };
 
+  const activeLogo = company.logoUrl || defaultLogo;
+
   return (
     <div className="invoice-paper" id="invoice-printable-doc">
       <div className="invoice-frame">
@@ -51,14 +54,25 @@ export const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
 
         {/* Company Header */}
         <div className="invoice-header-section">
-          <h1
-            className="invoice-company-title"
-            contentEditable={isEditableInline}
-            suppressContentEditableWarning
-            onBlur={(e) => handleTextChange('company.companyName', e.currentTarget.innerText)}
-          >
-            {company.companyName}
-          </h1>
+          {/* Top-Left Company Logo */}
+          <div className="invoice-header-logo-container">
+            <img
+              src={activeLogo}
+              alt={company.companyName || 'Swami Krupa Roadlines Logo'}
+              className="invoice-header-logo"
+            />
+          </div>
+
+          {/* Company Details (Centered beside logo) */}
+          <div className="invoice-header-details">
+            <h1
+              className="invoice-company-title"
+              contentEditable={isEditableInline}
+              suppressContentEditableWarning
+              onBlur={(e) => handleTextChange('company.companyName', e.currentTarget.innerText)}
+            >
+              {company.companyName}
+            </h1>
 
           <div
             className="invoice-company-tagline"
@@ -117,8 +131,9 @@ export const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
             PAN NO - {company.panNo}
           </div>
         </div>
+      </div>
 
-        {/* TAX INVOICE Title */}
+      {/* TAX INVOICE Title */}
         <div
           className="invoice-title-bar"
           contentEditable={isEditableInline}

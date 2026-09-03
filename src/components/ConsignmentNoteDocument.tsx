@@ -1,6 +1,7 @@
 import React from 'react';
 import type { ConsignmentNote } from '../types/invoice';
 import { formatCurrency } from '../utils/numberToWords';
+import defaultLogo from '../logo.png';
 
 interface ConsignmentNoteDocumentProps {
   note: ConsignmentNote;
@@ -21,6 +22,8 @@ export const ConsignmentNoteDocument: React.FC<ConsignmentNoteDocumentProps> = (
     }
   };
 
+  const activeLogo = company.logoUrl || defaultLogo;
+
   return (
     <div className="consignment-note-paper" id="consignment-printable-doc">
       <div className="consignment-frame">
@@ -36,7 +39,9 @@ export const ConsignmentNoteDocument: React.FC<ConsignmentNoteDocumentProps> = (
         <div className="cn-header-grid">
           <div className="cn-brand-section">
             <div className="cn-brand-logo-title-wrap">
-              <div className="cn-logo-icon">🚛</div>
+              <div className="cn-logo-icon">
+                <img src={activeLogo} alt="Swami Krupa Roadlines Logo" className="cn-header-logo-img" />
+              </div>
               <div className="cn-brand-text">
                 <h1
                   className="cn-company-name"
