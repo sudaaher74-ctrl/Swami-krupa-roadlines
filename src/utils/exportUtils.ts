@@ -2,6 +2,7 @@ import { toPng } from 'html-to-image';
 import { jsPDF } from 'jspdf';
 import type { InvoiceData } from '../types/invoice';
 import { formatCurrency } from './numberToWords';
+import { getInvoiceTotals } from './invoiceCalculations';
 
 /**
  * Captures the invoice paper element and downloads as high-resolution A4 PDF using native HTML-to-Image rendering
@@ -70,9 +71,7 @@ export async function downloadInvoicePDF(invoice: InvoiceData): Promise<void> {
  * Generates WhatsApp sharing link with structured invoice details
  */
 export function generateWhatsAppMessage(invoice: InvoiceData): string {
-  const total = invoice.items.reduce((s, i) => s + (Number(i.amount) || 0), 0);
-  const advance = Number(invoice.advanceDeduction) || 0;
-  const balance = total - advance;
+  const { billTotal: total, advanceAmount: advance, balanceAmount: balance } = getInvoiceTotals(invoice);
 
   const vehicleList = Array.from(
     new Set(invoice.items.map((i) => i.vehicleNo).filter(Boolean))
@@ -165,9 +164,7 @@ export function exportInvoicesToCSV(invoices: InvoiceData[]): void {
   ];
 
   const rows = invoices.map((inv) => {
-    const gross = inv.items.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
-    const advance = Number(inv.advanceDeduction) || 0;
-    const net = gross - advance;
+    const { billTotal: gross, advanceAmount: advance, balanceAmount: net } = getInvoiceTotals(inv);
     const received = Number(inv.amountReceived) || (inv.paymentStatus === 'PAID' ? net : 0);
     const pending = Math.max(0, net - received);
 

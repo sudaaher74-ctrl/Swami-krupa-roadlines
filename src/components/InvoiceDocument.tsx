@@ -1,6 +1,7 @@
 import React from 'react';
 import type { InvoiceData } from '../types/invoice';
 import { numberToIndianWords, formatCurrency } from '../utils/numberToWords';
+import { getInvoiceTotals, parseAdvanceAmount } from '../utils/invoiceCalculations';
 import defaultLogo from '../logo.png';
 
 interface InvoiceDocumentProps {
@@ -17,9 +18,7 @@ export const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
   const { company, bank, items } = invoice;
 
   // Calculations
-  const billTotal = items.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
-  const advanceAmount = Number(invoice.advanceDeduction) || 0;
-  const balanceAmount = billTotal - advanceAmount;
+  const { billTotal, advanceAmount, balanceAmount } = getInvoiceTotals(invoice);
 
   const amountInWords =
     invoice.customAmountInWords ||
@@ -270,7 +269,11 @@ export const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
                   <td className="col-container text-center container-cell">{item.containerNo}</td>
                   <td className="col-particulars text-center">{item.particulars}</td>
                   <td className="col-weight text-center">{item.weight}</td>
-                  <td className="col-advance text-center">{item.advance}</td>
+                  <td className="col-advance text-center">
+                    {item.advance && parseAdvanceAmount(item.advance) > 0
+                      ? formatCurrency(parseAdvanceAmount(item.advance))
+                      : item.advance}
+                  </td>
                   <td className="col-amount text-right">
                     {item.amount !== '' && item.amount !== undefined
                       ? formatCurrency(item.amount)

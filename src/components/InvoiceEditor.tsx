@@ -17,6 +17,7 @@ import {
   PlusCircle
 } from 'lucide-react';
 import { numberToIndianWords, formatCurrency } from '../utils/numberToWords';
+import { getInvoiceTotals, parseAdvanceAmount } from '../utils/invoiceCalculations';
 import { openWhatsAppShare } from '../utils/exportUtils';
 import { calculateNextBillNumber } from '../utils/billNumberUtils';
 import defaultLogo from '../logo.png';
@@ -88,9 +89,18 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
       ...updatedItems[index],
       [field]: value,
     };
+    const itemsAdvance = updatedItems.reduce(
+      (sum, it) => sum + parseAdvanceAmount(it.advance),
+      0
+    );
+    const newAdvanceDeduction = field === 'advance'
+      ? itemsAdvance
+      : (itemsAdvance > 0 ? itemsAdvance : invoice.advanceDeduction);
+
     onChange({
       ...invoice,
       items: updatedItems,
+      advanceDeduction: newAdvanceDeduction,
       updatedAt: new Date().toISOString(),
     });
   };
@@ -130,9 +140,14 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
     };
     const updated = [...invoice.items];
     updated.splice(index + 1, 0, cloned);
+    const itemsAdvance = updated.reduce(
+      (sum, it) => sum + parseAdvanceAmount(it.advance),
+      0
+    );
     onChange({
       ...invoice,
       items: updated,
+      advanceDeduction: itemsAdvance > 0 ? itemsAdvance : invoice.advanceDeduction,
       updatedAt: new Date().toISOString(),
     });
   };
@@ -154,13 +169,20 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
             amount: '',
           },
         ],
+        advanceDeduction: 0,
+        updatedAt: new Date().toISOString(),
       });
       return;
     }
     const updated = invoice.items.filter((_, idx) => idx !== index);
+    const itemsAdvance = updated.reduce(
+      (sum, it) => sum + parseAdvanceAmount(it.advance),
+      0
+    );
     onChange({
       ...invoice,
       items: updated,
+      advanceDeduction: itemsAdvance > 0 ? itemsAdvance : 0,
       updatedAt: new Date().toISOString(),
     });
   };
@@ -178,9 +200,7 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
     onChange(copy);
   };
 
-  const billTotal = invoice.items.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
-  const advanceAmount = Number(invoice.advanceDeduction) || 0;
-  const balanceTotal = billTotal - advanceAmount;
+  const { billTotal, advanceAmount, balanceAmount: balanceTotal } = getInvoiceTotals(invoice);
 
   return (
     <div className="editor-container">
@@ -367,7 +387,7 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
                   </div>
 
                   <div className="form-group col-6">
-                    <label>Advance (Optional)</label>
+                    <label style={{ color: '#f59e0b', fontWeight: 600 }}>Advance (Optional)</label>
                     <input
                       type="text"
                       value={item.advance}
@@ -586,6 +606,15 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
                 placeholder="0.00"
                 onChange={(e) => updateInvoice('advanceDeduction', parseFloat(e.target.value) || 0)}
               />
+              {invoice.items.some((it) => parseAdvanceAmount(it.advance) > 0) ? (
+                <span style={{ fontSize: '11px', color: '#10b981', display: 'block', marginTop: '3px' }}>
+                  ✓ Synced from items advance (₹ {formatCurrency(invoice.items.reduce((s, it) => s + parseAdvanceAmount(it.advance), 0))})
+                </span>
+              ) : (
+                <span style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginTop: '3px' }}>
+                  Lump-sum advance deduction for entire bill
+                </span>
+              )}
             </div>
 
             <div className="form-group col-6">

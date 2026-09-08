@@ -9,6 +9,7 @@ import {
   FileText
 } from 'lucide-react';
 import { formatCurrency } from '../utils/numberToWords';
+import { getInvoiceTotals } from '../utils/invoiceCalculations';
 
 interface PartyLedgerModalProps {
   isOpen: boolean;
@@ -39,9 +40,9 @@ export const PartyLedgerModal: React.FC<PartyLedgerModalProps> = ({
 
   if (!isOpen) return null;
 
-  // Helper to compute bill total
+  // Helper to compute bill net payable (after advance deduction)
   const getInvoiceTotal = (inv: InvoiceData): number => {
-    return inv.items.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+    return getInvoiceTotals(inv).balanceAmount;
   };
 
   // Group invoices by Client / Customer Name

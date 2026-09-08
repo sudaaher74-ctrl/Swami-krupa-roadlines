@@ -16,6 +16,7 @@ import {
   CreditCard
 } from 'lucide-react';
 import { formatCurrency } from '../utils/numberToWords';
+import { getInvoiceTotals } from '../utils/invoiceCalculations';
 import { exportInvoicesToCSV } from '../utils/exportUtils';
 
 interface SavedInvoicesModalProps {
@@ -81,8 +82,7 @@ export const SavedInvoicesModal: React.FC<SavedInvoicesModalProps> = ({
   let totalReceivedSum = 0;
 
   savedInvoices.forEach((inv) => {
-    const gross = inv.items.reduce((s, i) => s + (Number(i.amount) || 0), 0);
-    const net = gross - (Number(inv.advanceDeduction) || 0);
+    const { balanceAmount: net } = getInvoiceTotals(inv);
     totalBilledSum += net;
 
     const received =
@@ -111,9 +111,7 @@ export const SavedInvoicesModal: React.FC<SavedInvoicesModalProps> = ({
 
     if (!matchesSearch) return false;
 
-    const net =
-      inv.items.reduce((s, i) => s + (Number(i.amount) || 0), 0) -
-      (Number(inv.advanceDeduction) || 0);
+    const { balanceAmount: net } = getInvoiceTotals(inv);
     const rec = Number(inv.amountReceived) || (inv.paymentStatus === 'PAID' ? net : 0);
     const currentStatus =
       inv.paymentStatus || (rec >= net && net > 0 ? 'PAID' : rec > 0 ? 'PARTIAL' : 'UNPAID');
@@ -148,8 +146,7 @@ export const SavedInvoicesModal: React.FC<SavedInvoicesModalProps> = ({
   };
 
   const openPaymentDialog = (inv: InvoiceData) => {
-    const gross = inv.items.reduce((s, i) => s + (Number(i.amount) || 0), 0);
-    const net = gross - (Number(inv.advanceDeduction) || 0);
+    const { balanceAmount: net } = getInvoiceTotals(inv);
     const initialRec = Number(inv.amountReceived) || (inv.paymentStatus === 'PAID' ? net : 0);
 
     setEditingPaymentInv(inv);
@@ -304,9 +301,7 @@ export const SavedInvoicesModal: React.FC<SavedInvoicesModalProps> = ({
           ) : (
             <div className="invoice-cards-grid">
               {filtered.map((inv) => {
-                const total = inv.items.reduce((s, i) => s + (Number(i.amount) || 0), 0);
-                const advance = Number(inv.advanceDeduction) || 0;
-                const net = total - advance;
+                const { advanceAmount: advance, balanceAmount: net } = getInvoiceTotals(inv);
                 const vehicles = Array.from(new Set(inv.items.map((i) => i.vehicleNo).filter(Boolean))).join(', ');
                 
                 const rec = Number(inv.amountReceived) || (inv.paymentStatus === 'PAID' ? net : 0);
