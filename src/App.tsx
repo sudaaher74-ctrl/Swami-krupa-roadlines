@@ -3,13 +3,13 @@ import type { InvoiceData, CustomerRecord, VehicleRecord, TripSlip, ConsignmentN
 import {
   defaultInvoice,
   createNewInvoice,
-  defaultCompanyProfile,
   defaultConsignmentNote,
   createNewConsignmentNote,
 } from './utils/defaultData';
 import { calculateNextBillNumber, recordBillSequenceNumber } from './utils/billNumberUtils';
 import { HeaderBar } from './components/HeaderBar';
 import { InvoiceDocument } from './components/InvoiceDocument';
+import { ModernInvoiceDocument } from './components/ModernInvoiceDocument';
 import { InvoiceEditor } from './components/InvoiceEditor';
 import { SavedInvoicesModal } from './components/SavedInvoicesModal';
 import { DirectoryModal } from './components/DirectoryModal';
@@ -20,6 +20,7 @@ import { type FullSystemBackup } from './utils/storageUtils';
 import { ConsignmentNoteEditor } from './components/ConsignmentNoteEditor';
 import { ConsignmentNoteDocument } from './components/ConsignmentNoteDocument';
 import { SavedConsignmentNotesModal } from './components/SavedConsignmentNotesModal';
+import { Dashboard } from './components/Dashboard';
 import {
   downloadInvoicePDF,
   openWhatsAppShare,
@@ -29,65 +30,25 @@ import {
 } from './utils/exportUtils';
 import { CheckCircle2 } from 'lucide-react';
 import './styles/app.css';
+import { useStore } from './store/useStore';
 
 import {
-  fetchInvoices, saveInvoice, deleteInvoice,
-  fetchConsignmentNotes, saveConsignmentNote, deleteConsignmentNote,
-  fetchCustomers, saveCustomer, deleteCustomer,
-  fetchVehicles, saveVehicle, deleteVehicle,
-  fetchTripSlips, saveTripSlip, deleteTripSlip
+  saveInvoice, deleteInvoice,
+  saveConsignmentNote, deleteConsignmentNote,
+  saveCustomer, deleteCustomer,
+  saveVehicle, deleteVehicle,
+  saveTripSlip, deleteTripSlip
 } from './utils/supabaseService';
 
 
 const LOCAL_STORAGE_KEY_INVOICES = 'swami_krupa_saved_invoices_v1';
-const LOCAL_STORAGE_KEY_CUSTOMERS = 'swami_krupa_saved_customers_v1';
-const LOCAL_STORAGE_KEY_VEHICLES = 'swami_krupa_saved_vehicles_v1';
 const LOCAL_STORAGE_KEY_COMPANY = 'swami_krupa_company_profile_v1';
 const LOCAL_STORAGE_KEY_BANK = 'swami_krupa_bank_details_v1';
-const LOCAL_STORAGE_KEY_TRIP_SLIPS = 'swami_krupa_trip_slips_v1';
 const LOCAL_STORAGE_KEY_LR_NOTES = 'swami_krupa_consignment_notes_v1';
-
-const defaultTripSlipsList: TripSlip[] = [
-  {
-    id: 'slip-1',
-    slipNo: 'SLIP-101',
-    date: '28-08-2026',
-    vehicleNo: 'MH46DL7778',
-    driverName: 'RAMESH SINGH',
-    driverPhone: '9876543210',
-    fromLocation: 'NHAVA SHEVA',
-    toLocation: 'VASAI',
-    containerNo: 'BEAU5560140 (40FT)',
-    dieselLiters: 65,
-    dieselRate: 92.5,
-    dieselAmount: 6012,
-    dieselPumpName: 'HPCL PANVEL',
-    driverAdvance: 2000,
-    tollCharges: 650,
-    otherExpenses: 0,
-    remarks: 'Trip advance & diesel voucher',
-    totalExpense: 8662,
-    company: defaultCompanyProfile,
-    createdAt: new Date().toISOString(),
-  },
-];
-
-const defaultCustomersList: CustomerRecord[] = [
-  { id: 'c-1', name: 'ADNISHA TRANSPORT', phone: '9987010013', address: 'Navi Mumbai' },
-  { id: 'c-2', name: 'M/s Alembic Pharmaceuticals LTD', phone: '9820011223', address: 'Nhava Sheva Mumbai Allcargo CFS' },
-  { id: 'c-3', name: 'CONTINENTAL LOGISTICS', phone: '9820011223', address: 'Nhava Sheva' },
-  { id: 'c-4', name: 'SHREE BALAJI ROADWAYS', phone: '9888522803', address: 'Kalamboli' },
-];
-
-const defaultVehiclesList: VehicleRecord[] = [
-  { id: 'v-1', vehicleNo: 'MH46CL8146', type: '40ft Trailer' },
-  { id: 'v-2', vehicleNo: 'MH46DL7778', type: '40ft Trailer' },
-  { id: 'v-3', vehicleNo: 'MH46BB1234', type: '20ft Truck' },
-];
 
 export const App: React.FC = () => {
   // Document mode: Tax Invoice vs e-LR (Goods Consignment Note)
-  const [activeDocType, setActiveDocType] = useState<'invoice' | 'lr'>('invoice');
+  const [activeDocType, setActiveDocType] = useState<'dashboard' | 'invoice' | 'lr'>('dashboard');
 
   // Current active invoice
   const [currentInvoice, setCurrentInvoice] = useState<InvoiceData>(() => {
@@ -126,60 +87,14 @@ export const App: React.FC = () => {
     return defaultConsignmentNote;
   });
 
-  // Saved Invoices list
-  const [savedInvoices, setSavedInvoices] = useState<InvoiceData[]>(() => {
-    try {
-      const stored = localStorage.getItem(LOCAL_STORAGE_KEY_INVOICES);
-      if (stored) return JSON.parse(stored);
-    } catch (e) {
-      console.error('Error loading saved invoices', e);
-    }
-    return [defaultInvoice];
-  });
-
-  // Saved LR Notes list
-  const [consignmentNotes, setConsignmentNotes] = useState<ConsignmentNote[]>(() => {
-    try {
-      const stored = localStorage.getItem(LOCAL_STORAGE_KEY_LR_NOTES);
-      if (stored) return JSON.parse(stored);
-    } catch (e) {
-      console.error('Error loading LR notes', e);
-    }
-    return [defaultConsignmentNote];
-  });
-
-  // Saved Customers Master
-  const [customers, setCustomers] = useState<CustomerRecord[]>(() => {
-    try {
-      const stored = localStorage.getItem(LOCAL_STORAGE_KEY_CUSTOMERS);
-      if (stored) return JSON.parse(stored);
-    } catch (e) {
-      console.error('Error loading customers', e);
-    }
-    return defaultCustomersList;
-  });
-
-  // Saved Vehicles Master
-  const [vehicles, setVehicles] = useState<VehicleRecord[]>(() => {
-    try {
-      const stored = localStorage.getItem(LOCAL_STORAGE_KEY_VEHICLES);
-      if (stored) return JSON.parse(stored);
-    } catch (e) {
-      console.error('Error loading vehicles', e);
-    }
-    return defaultVehiclesList;
-  });
-
-  // Trip Slips Master
-  const [tripSlips, setTripSlips] = useState<TripSlip[]>(() => {
-    try {
-      const stored = localStorage.getItem(LOCAL_STORAGE_KEY_TRIP_SLIPS);
-      if (stored) return JSON.parse(stored);
-    } catch (e) {
-      console.error('Error loading trip slips', e);
-    }
-    return defaultTripSlipsList;
-  });
+  const {
+    savedInvoices, setSavedInvoices,
+    consignmentNotes, setConsignmentNotes,
+    customers, setCustomers,
+    vehicles, setVehicles,
+    tripSlips, setTripSlips,
+    fetchInitialData, resetToDemo
+  } = useStore();
 
   // UI modals & view states
   const [isSavedModalOpen, setIsSavedModalOpen] = useState(false);
@@ -196,19 +111,11 @@ export const App: React.FC = () => {
   const [isDownloadingPDF, setIsDownloadingPDF] = useState(false);
 
 
-  // Sync state to localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem(LOCAL_STORAGE_KEY_INVOICES, JSON.stringify(savedInvoices));
-    } catch (e) {}
-  }, [savedInvoices]);
-
-  // Supabase Initial Fetch
+// Supabase Initial Fetch
   useEffect(() => {
     const initData = async () => {
-      const invs = await fetchInvoices();
+      const { invs } = await fetchInitialData();
       if (invs.length > 0) {
-          setSavedInvoices(invs);
           setCurrentInvoice(prev => {
             if (!invs.find(i => i.id === prev.id) && prev.id.startsWith('inv-')) {
                 return { ...prev, billNo: calculateNextBillNumber(invs) };
@@ -216,44 +123,18 @@ export const App: React.FC = () => {
             return prev;
           });
       }
-      const notes = await fetchConsignmentNotes();
-      if (notes.length > 0) {
-          setConsignmentNotes(notes);
-      }
-      const custs = await fetchCustomers();
-      if (custs.length > 0) setCustomers(custs);
-      const vehs = await fetchVehicles();
-      if (vehs.length > 0) setVehicles(vehs);
-      const slips = await fetchTripSlips();
-      if (slips.length > 0) setTripSlips(slips);
     };
     initData();
-  }, []);
+  }, [fetchInitialData]);
 
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(LOCAL_STORAGE_KEY_LR_NOTES, JSON.stringify(consignmentNotes));
-    } catch (e) {}
-  }, [consignmentNotes]);
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(LOCAL_STORAGE_KEY_CUSTOMERS, JSON.stringify(customers));
-    } catch (e) {}
-  }, [customers]);
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(LOCAL_STORAGE_KEY_VEHICLES, JSON.stringify(vehicles));
-    } catch (e) {}
-  }, [vehicles]);
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(LOCAL_STORAGE_KEY_TRIP_SLIPS, JSON.stringify(tripSlips));
-    } catch (e) {}
-  }, [tripSlips]);
+
+
+
+
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -515,14 +396,12 @@ export const App: React.FC = () => {
   };
 
   const handleResetToDemo = () => {
-    setSavedInvoices([defaultInvoice]);
-    setCurrentInvoice(defaultInvoice);
-    setConsignmentNotes([defaultConsignmentNote]);
-    setCurrentConsignmentNote(defaultConsignmentNote);
-    setCustomers(defaultCustomersList);
-    setVehicles(defaultVehiclesList);
-    setTripSlips(defaultTripSlipsList);
-    showToast('Reset to default demo data!');
+    if (window.confirm('Are you sure you want to completely reset? This cannot be undone.')) {
+      resetToDemo();
+      setCurrentInvoice(defaultInvoice);
+      setCurrentConsignmentNote(defaultConsignmentNote);
+      showToast('Reset to default demo data!');
+    }
   };
 
   // --- UNIFIED EXPORT & PRINT ACTIONS ---
@@ -815,58 +694,71 @@ export const App: React.FC = () => {
 
       {/* Main Split Content */}
       <main className="app-main-workspace">
-        {/* Left Form Editor */}
-        {viewMode !== 'preview' && (
-          <aside className="editor-sidebar-container no-print">
-            {activeDocType === 'lr' ? (
-              <ConsignmentNoteEditor
-                note={currentConsignmentNote}
-                onChange={setCurrentConsignmentNote}
-                customers={customers}
-                vehicles={vehicles}
-                onSaveAsDefaultProfile={handleSaveAsDefaultProfile}
-                onConvertToInvoice={handleConvertLRToInvoice}
-                onOpenDirectoryModal={() => setIsDirectoryModalOpen(true)}
-              />
-            ) : (
-              <InvoiceEditor
-                invoice={currentInvoice}
-                onChange={setCurrentInvoice}
-                onSaveAsDefaultProfile={() => handleSaveAsDefaultProfile(currentInvoice.company)}
-                customers={customers}
-                vehicles={vehicles}
-                savedInvoices={savedInvoices}
-                onSaveAndNext={handleSaveAndNextInvoice}
-                onQuickSaveCustomer={handleQuickSaveCustomer}
-                onQuickSaveVehicle={handleQuickSaveVehicle}
-                onOpenDirectoryModal={() => setIsDirectoryModalOpen(true)}
-              />
-            )}
-          </aside>
-        )}
+        {activeDocType === 'dashboard' ? (
+          <Dashboard />
+        ) : (
+          <>
+                {/* Left Form Editor */}
+                {viewMode !== 'preview' && (
+                  <aside className="editor-sidebar-container no-print">
+                    {activeDocType === 'lr' ? (
+                      <ConsignmentNoteEditor
+                        note={currentConsignmentNote}
+                        onChange={setCurrentConsignmentNote}
+                        customers={customers}
+                        vehicles={vehicles}
+                        onSaveAsDefaultProfile={handleSaveAsDefaultProfile}
+                        onConvertToInvoice={handleConvertLRToInvoice}
+                        onOpenDirectoryModal={() => setIsDirectoryModalOpen(true)}
+                      />
+                    ) : (
+                      <InvoiceEditor
+                        invoice={currentInvoice}
+                        onChange={setCurrentInvoice}
+                        onSaveAsDefaultProfile={() => handleSaveAsDefaultProfile(currentInvoice.company)}
+                        customers={customers}
+                        vehicles={vehicles}
+                        savedInvoices={savedInvoices}
+                        onSaveAndNext={handleSaveAndNextInvoice}
+                        onQuickSaveCustomer={handleQuickSaveCustomer}
+                        onQuickSaveVehicle={handleQuickSaveVehicle}
+                        onOpenDirectoryModal={() => setIsDirectoryModalOpen(true)}
+                      />
+                    )}
+                  </aside>
+                )}
 
-        {/* Live A4 Document Preview */}
-        {viewMode !== 'editor' && (
-          <section className="preview-pane-container">
-            <div
-              className="preview-scaler"
-              style={{ transform: `scale(${zoom})`, transformOrigin: 'top center' }}
-            >
-              {activeDocType === 'lr' ? (
-                <ConsignmentNoteDocument
-                  note={currentConsignmentNote}
-                  isEditableInline={true}
-                  onUpdateField={handleDirectLRFieldUpdate}
-                />
-              ) : (
-                <InvoiceDocument
-                  invoice={currentInvoice}
-                  isEditableInline={true}
-                  onUpdateField={handleDirectInvoiceFieldUpdate}
-                />
-              )}
-            </div>
-          </section>
+                {/* Live A4 Document Preview */}
+                {viewMode !== 'editor' && (
+                  <section className="preview-pane-container">
+                    <div
+                      className="preview-scaler"
+                      style={{ transform: `scale(${zoom})`, transformOrigin: 'top center' }}
+                    >
+                      {activeDocType === 'lr' ? (
+                        <ConsignmentNoteDocument
+                          note={currentConsignmentNote}
+                          isEditableInline={true}
+                          onUpdateField={handleDirectLRFieldUpdate}
+                        />
+                      ) : currentInvoice.template === 'modern' ? (
+                        <ModernInvoiceDocument
+                          invoice={currentInvoice}
+                          isEditableInline={true}
+                          onUpdateField={handleDirectInvoiceFieldUpdate}
+                        />
+                      ) : (
+                        <InvoiceDocument
+                          invoice={currentInvoice}
+                          isEditableInline={true}
+                          onUpdateField={handleDirectInvoiceFieldUpdate}
+                        />
+                      )}
+                    </div>
+                  </section>
+                )}
+
+          </>
         )}
       </main>
 

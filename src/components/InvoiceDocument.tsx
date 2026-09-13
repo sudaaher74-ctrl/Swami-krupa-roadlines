@@ -185,7 +185,6 @@ export const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({
                   style={{
                     cursor: 'pointer',
                     userSelect: 'none',
-                    borderBottom: '1px dotted #2563eb',
                     fontWeight: 700,
                   }}
                 >

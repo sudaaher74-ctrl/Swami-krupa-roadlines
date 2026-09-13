@@ -454,6 +454,44 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
           </datalist>
 
           <div className="form-grid-layout">
+            <div className="form-group col-12">
+              <label>Invoice Template Format</label>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button
+                  type="button"
+                  onClick={() => updateInvoice('template', 'classic')}
+                  style={{
+                    flex: 1,
+                    padding: '8px',
+                    borderRadius: '6px',
+                    border: (invoice.template || 'classic') === 'classic' ? '2px solid #3b82f6' : '1px solid #cbd5e1',
+                    background: (invoice.template || 'classic') === 'classic' ? '#eff6ff' : '#f8fafc',
+                    fontWeight: 600,
+                    color: (invoice.template || 'classic') === 'classic' ? '#1e40af' : '#475569',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Classic Format
+                </button>
+                <button
+                  type="button"
+                  onClick={() => updateInvoice('template', 'modern')}
+                  style={{
+                    flex: 1,
+                    padding: '8px',
+                    borderRadius: '6px',
+                    border: invoice.template === 'modern' ? '2px solid #10b981' : '1px solid #cbd5e1',
+                    background: invoice.template === 'modern' ? '#ecfdf5' : '#f8fafc',
+                    fontWeight: 600,
+                    color: invoice.template === 'modern' ? '#047857' : '#475569',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Modern Format (New)
+                </button>
+              </div>
+            </div>
+
             <div className="form-group col-8">
               <div className="flex-between">
                 <label>M/S Transport Party / Consignee Name *</label>

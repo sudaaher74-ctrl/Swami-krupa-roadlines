@@ -56,6 +56,7 @@ export interface InvoiceData {
   paymentNotes?: string;
   createdAt: string;
   updatedAt: string;
+  template?: 'classic' | 'modern';
 }
 
 export interface CustomerRecord {

@@ -19,8 +19,8 @@ import {
 } from 'lucide-react';
 
 interface HeaderBarProps {
-  activeDocType: 'invoice' | 'lr';
-  onDocTypeChange: (type: 'invoice' | 'lr') => void;
+  activeDocType: 'dashboard' | 'invoice' | 'lr';
+  onDocTypeChange: (type: 'dashboard' | 'invoice' | 'lr') => void;
   onNewInvoice: () => void;
   onSaveInvoice: () => void;
   onSaveAndNextInvoice?: () => void;
@@ -89,7 +89,16 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
         <div className="doc-mode-switcher-pill">
           <button
             type="button"
-            className={`doc-mode-btn ${!isLR ? 'active' : ''}`}
+            className={`doc-mode-btn ${activeDocType === 'dashboard' ? 'active' : ''}`}
+            onClick={() => onDocTypeChange('dashboard')}
+            title="Overview & Analytics"
+          >
+            <Layout size={13} />
+            <span>Dashboard</span>
+          </button>
+          <button
+            type="button"
+            className={`doc-mode-btn ${activeDocType === 'invoice' ? 'active' : ''}`}
             onClick={() => onDocTypeChange('invoice')}
             title="Switch to Tax Invoice Generator"
           >
