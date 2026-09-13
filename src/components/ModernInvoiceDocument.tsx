@@ -157,6 +157,16 @@ export const ModernInvoiceDocument: React.FC<ModernInvoiceDocumentProps> = ({
             suppressContentEditableWarning
             onBlur={(e) => handleTextChange('clientName', e.currentTarget.innerText)}
           >{invoice.clientName}</div>
+          <div 
+            className="mod-billto-address"
+            contentEditable={isEditableInline}
+            suppressContentEditableWarning
+            onBlur={(e) => handleTextChange('clientAddress', e.currentTarget.innerText)}
+            style={{ fontSize: '11px', color: '#475569', marginBottom: '8px', lineHeight: '1.4' }}
+          >
+            {invoice.clientAddress}
+            {invoice.clientPhone && <span><br />Phone: {invoice.clientPhone}</span>}
+          </div>
           <div className="mod-billto-refs">
             <span>{invoice.refDocType || 'BE NO'}.: </span>
             <span 
