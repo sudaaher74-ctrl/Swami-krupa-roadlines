@@ -53,7 +53,7 @@ export const ModernInvoiceDocument: React.FC<ModernInvoiceDocumentProps> = ({
   };
 
   return (
-    <div className="modern-invoice-container a4-page">
+    <div id="invoice-printable-doc" className="modern-invoice-container a4-page">
       {/* 1. Header Section */}
       <header className="mod-header">
         <div className="mod-header-left">
