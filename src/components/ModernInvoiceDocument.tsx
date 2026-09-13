@@ -18,6 +18,7 @@ import {
   Calculator,
   Globe
 } from 'lucide-react';
+import defaultLogo from '../logo.png';
 import '../styles/modern-invoice.css';
 
 interface ModernInvoiceDocumentProps {
@@ -58,23 +59,7 @@ export const ModernInvoiceDocument: React.FC<ModernInvoiceDocumentProps> = ({
         <div className="mod-header-left">
           {/* Logo Area */}
           <div className="mod-logo-box">
-            {company.logoUrl ? (
-              <img src={company.logoUrl} alt="Logo" className="mod-logo-img" />
-            ) : (
-              <div className="mod-logo-placeholder">
-                <div style={{ display: 'flex', alignItems: 'flex-end', marginBottom: '-5px' }}>
-                  <span className="mod-logo-sr" style={{ color: '#0f3d32', fontStyle: 'italic', fontWeight: 900, fontSize: '38px', letterSpacing: '-2px' }}>S</span>
-                  <span className="mod-logo-sr" style={{ color: '#ea580c', fontStyle: 'italic', fontWeight: 900, fontSize: '38px', letterSpacing: '-2px', marginLeft: '-2px' }}>R</span>
-                </div>
-                <span className="mod-logo-title" style={{ color: '#0f3d32', fontWeight: 900, fontSize: '18px', letterSpacing: '0px' }}>SWAMI KRUPA</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
-                  <div style={{ flex: 1, height: '2px', background: '#ea580c' }}></div>
-                  <span className="mod-logo-subtitle" style={{ color: '#ea580c', fontWeight: 800, fontSize: '14px', letterSpacing: '2px', border: 'none', padding: 0, margin: 0 }}>ROADLINES</span>
-                  <div style={{ flex: 1, height: '2px', background: '#ea580c' }}></div>
-                </div>
-                <span className="mod-logo-tag" style={{ color: '#94a3b8', fontSize: '6px', letterSpacing: '1px', fontWeight: 600 }}>SAFE ROADS STRONGER TOMORROW</span>
-              </div>
-            )}
+            <img src={company.logoUrl || defaultLogo} alt="Logo" className="mod-logo-img" />
           </div>
           
           <div className="mod-header-details">
