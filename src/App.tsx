@@ -90,12 +90,41 @@ export const App: React.FC = () => {
   const [activeDocType, setActiveDocType] = useState<'invoice' | 'lr'>('invoice');
 
   // Current active invoice
-  const [currentInvoice, setCurrentInvoice] = useState<InvoiceData>(() => defaultInvoice);
+  const [currentInvoice, setCurrentInvoice] = useState<InvoiceData>(() => {
+    try {
+      const stored = localStorage.getItem(LOCAL_STORAGE_KEY_INVOICES);
+      if (stored) {
+         const list = JSON.parse(stored);
+         if (list.length > 0) {
+            const nextBillNo = calculateNextBillNumber(list);
+            const newInv = createNewInvoice(nextBillNo);
+            const savedComp = localStorage.getItem(LOCAL_STORAGE_KEY_COMPANY);
+            if (savedComp) newInv.company = JSON.parse(savedComp);
+            const savedBank = localStorage.getItem(LOCAL_STORAGE_KEY_BANK);
+            if (savedBank) newInv.bank = JSON.parse(savedBank);
+            return newInv;
+         }
+      }
+    } catch (e) {}
+    return defaultInvoice;
+  });
 
   // Current active e-LR Note
-  const [currentConsignmentNote, setCurrentConsignmentNote] = useState<ConsignmentNote>(
-    () => defaultConsignmentNote
-  );
+  const [currentConsignmentNote, setCurrentConsignmentNote] = useState<ConsignmentNote>(() => {
+    try {
+      const stored = localStorage.getItem(LOCAL_STORAGE_KEY_LR_NOTES);
+      if (stored) {
+         const list = JSON.parse(stored);
+         if (list.length > 0) {
+            const newLR = createNewConsignmentNote();
+            const savedComp = localStorage.getItem(LOCAL_STORAGE_KEY_COMPANY);
+            if (savedComp) newLR.company = JSON.parse(savedComp);
+            return newLR;
+         }
+      }
+    } catch (e) {}
+    return defaultConsignmentNote;
+  });
 
   // Saved Invoices list
   const [savedInvoices, setSavedInvoices] = useState<InvoiceData[]>(() => {
@@ -180,16 +209,16 @@ export const App: React.FC = () => {
       const invs = await fetchInvoices();
       if (invs.length > 0) {
           setSavedInvoices(invs);
-          if (invs.length > 0 && !invs.find(i => i.id === currentInvoice.id)) {
-            setCurrentInvoice(invs[0]);
-          }
+          setCurrentInvoice(prev => {
+            if (!invs.find(i => i.id === prev.id) && prev.id.startsWith('inv-')) {
+                return { ...prev, billNo: calculateNextBillNumber(invs) };
+            }
+            return prev;
+          });
       }
       const notes = await fetchConsignmentNotes();
       if (notes.length > 0) {
           setConsignmentNotes(notes);
-          if (notes.length > 0 && !notes.find(n => n.id === currentConsignmentNote.id)) {
-            setCurrentConsignmentNote(notes[0]);
-          }
       }
       const custs = await fetchCustomers();
       if (custs.length > 0) setCustomers(custs);
