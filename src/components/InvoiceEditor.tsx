@@ -190,11 +190,9 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
   const handleSelectCustomer = (partyName: string) => {
     const found = customers.find((c) => c.name.toUpperCase() === partyName.toUpperCase());
     const copy = { ...invoice, clientName: partyName.toUpperCase() };
-    if (found && found.phone) {
-      copy.clientPhone = found.phone;
-    }
-    if (found && found.address) {
-      copy.clientAddress = found.address;
+    if (found) {
+      copy.clientPhone = found.phone || '';
+      copy.clientAddress = found.address || '';
     }
     copy.updatedAt = new Date().toISOString();
     onChange(copy);

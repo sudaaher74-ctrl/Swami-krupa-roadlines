@@ -719,7 +719,8 @@ export const App: React.FC = () => {
       setCurrentInvoice((prev) => ({
         ...prev,
         clientName: cust.name,
-        clientPhone: cust.phone || prev.clientPhone,
+        clientPhone: cust.phone || '',
+        clientAddress: cust.address || '',
       }));
     }
     setIsDirectoryModalOpen(false);
