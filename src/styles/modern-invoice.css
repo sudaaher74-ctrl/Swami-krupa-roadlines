@@ -26,7 +26,8 @@
   display: flex;
   padding: 24px;
   gap: 20px;
-  flex: 1;
+  width: 58%;
+  flex: none;
   z-index: 2;
 }
 
@@ -107,10 +108,10 @@
   position: absolute;
   top: 0;
   right: 0;
-  width: 45%;
+  width: 55%;
   height: 100%;
   background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-  clip-path: polygon(25% 0, 100% 0, 100% 100%, 0 100%);
+  clip-path: polygon(30% 0, 100% 0, 100% 100%, 0 100%);
   z-index: 1;
   display: flex;
   align-items: flex-start;
@@ -142,12 +143,15 @@
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  padding: 8px 40px;
-  gap: 40px;
+  padding: 8px 40px 8px 30px;
+  gap: 30px;
   clip-path: polygon(30px 0, 100% 0, 100% 100%, 0 100%);
   margin-top: -15px;
   position: relative;
   z-index: 3;
+  margin-left: auto;
+  width: fit-content;
+  min-width: 45%;
 }
 .mod-features-banner::before {
   content: '';
@@ -181,11 +185,12 @@
   letter-spacing: 3px;
   color: #64748b;
   line-height: 1.4;
+  width: 140px;
 }
 .mod-main-title {
-  font-size: 48px;
+  font-size: 56px;
   font-weight: 900;
-  letter-spacing: -1px;
+  letter-spacing: -2px;
 }
 .mod-title-dark { color: #0a3d31; }
 .mod-title-orange { color: #ea580c; }
@@ -244,10 +249,11 @@
   margin-bottom: 4px;
 }
 .mod-billto-name {
-  font-size: 18px;
+  font-size: 22px;
   font-weight: 800;
-  color: #1c1917;
+  color: #172554;
   margin-bottom: 6px;
+  text-transform: uppercase;
   outline: none;
 }
 .mod-billto-refs {
@@ -268,7 +274,11 @@
 }
 .mod-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
 }
 .mod-table th {
   background: #0a3d31;
@@ -277,11 +287,14 @@
   font-weight: 600;
   padding: 10px 8px;
   text-align: center;
-  border: 1px solid #0a3d31;
+  border-right: 1px solid #0f5644;
+}
+.mod-table th:last-child {
+  border-right: none;
 }
 .mod-table th.mod-th-sn {
   background: #ea580c;
-  border-color: #ea580c;
+  border-right: 1px solid #c2410c;
 }
 .mod-table th.mod-th-particulars {
   text-align: left;
@@ -289,27 +302,30 @@
 }
 
 .mod-table td {
-  border: 1px solid #e2e8f0;
+  border-right: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
   padding: 10px 8px;
   font-size: 11px;
   font-weight: 500;
   color: #334155;
 }
+.mod-table td:last-child {
+  border-right: none;
+}
 .mod-table td.mod-td-center { text-align: center; }
 .mod-table td.mod-td-left { text-align: left; padding-left: 12px; }
 .mod-table td.mod-td-right { text-align: right; }
-.mod-table td.mod-td-sn { text-align: center; border-left: 1px solid #e2e8f0; }
+.mod-table td.mod-td-sn { text-align: center; }
 
 .mod-pre-wrap { white-space: pre-wrap; }
 
 /* Remove bottom borders from filler rows to make it look like one big box */
 .mod-filler-row td {
-  border-top: none;
   border-bottom: none;
   height: 24px;
 }
 .mod-table tbody tr:last-child td {
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: none;
 }
 
 /* Bank and Summary */
@@ -329,8 +345,8 @@
   overflow: hidden;
 }
 .mod-bank-card {
-  background: #f1f8f6;
-  border-color: #d1e3df;
+  background: #f1fdf7;
+  border-color: #d1fae5;
 }
 .mod-card-header {
   display: flex;
@@ -397,9 +413,9 @@
 /* Amount in Words / GST */
 .mod-words-box {
   margin: 0 24px 8px 24px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
+  background: #f5f5f4;
+  border: none;
+  border-radius: 8px;
   padding: 12px 16px;
   display: flex;
   align-items: center;
@@ -571,7 +587,7 @@
 }
 .mod-cursive-text {
   font-family: 'Caveat', cursive;
-  font-size: 24px;
+  font-size: 32px;
   line-height: 1;
   font-weight: 700;
 }
@@ -579,4 +595,5 @@
   font-size: 7px;
   letter-spacing: 3px;
   color: #94a3b8;
+  margin-right: 5px;
 }
