@@ -2,7 +2,7 @@ import React from 'react';
 import {
   Printer, PlusCircle, ZoomIn, ZoomOut, RotateCcw,
   Layout, Maximize2, Download, Share2, FileText,
-  Phone, X, Edit2
+  Phone, X, Edit2, PanelLeft
 } from 'lucide-react';
 import { GlobalSearch } from './GlobalSearch';
 import type { ActiveView, CustomerRecord } from '../types/invoice';
@@ -37,6 +37,8 @@ interface HeaderBarProps {
   onSelectClient: (client: CustomerRecord) => void;
   onClearClient: () => void;
   onViewClientProfile: () => void;
+  isSidebarCollapsed?: boolean;
+  onToggleSidebar?: () => void;
 }
 
 export const HeaderBar: React.FC<HeaderBarProps> = ({
@@ -67,6 +69,8 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   onSelectClient,
   onClearClient,
   onViewClientProfile,
+  isSidebarCollapsed = false,
+  onToggleSidebar,
 }) => {
   const isLR = activeView === 'lr';
   const isEditorView = activeView === 'invoice' || activeView === 'lr';
@@ -79,8 +83,19 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   return (
     <>
       <header className="app-header no-print">
-        {/* Left: Search */}
+        {/* Left: Sidebar Toggle + Search */}
         <div className="header-left">
+          {onToggleSidebar && (
+            <button
+              type="button"
+              className={`btn-sidebar-toggle ${isSidebarCollapsed ? 'is-collapsed' : ''}`}
+              onClick={onToggleSidebar}
+              title={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              aria-label={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            >
+              <PanelLeft size={16} />
+            </button>
+          )}
           <GlobalSearch onSelectClient={onSelectClient} onNavigate={onNavigate} />
         </div>
 

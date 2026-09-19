@@ -78,26 +78,47 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
   return (
     <aside className={`sidebar-nav ${isCollapsed ? 'collapsed' : ''}`}>
       {/* Brand */}
-      <div className="sidebar-brand">
-        <div className="sidebar-brand-inner">
-          <div className="sidebar-brand-dot">
-            <div className="pulse" />
-            <div className="core" />
-          </div>
-          {!isCollapsed && (
-            <div className="sidebar-brand-text">
-              <span className="sidebar-brand-name">SWAMI KRUPA</span>
-              <span className="sidebar-brand-sub">Roadlines Studio</span>
+      <div
+        className={`sidebar-brand ${isCollapsed ? 'collapsed' : ''}`}
+        onClick={isCollapsed ? onToggleCollapse : undefined}
+        title={isCollapsed ? 'Click to expand sidebar' : undefined}
+      >
+        {isCollapsed ? (
+          <button
+            type="button"
+            className="sidebar-collapse-btn sidebar-expand-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleCollapse();
+            }}
+            title="Expand Sidebar"
+            aria-label="Expand Sidebar"
+          >
+            <ChevronRight size={16} />
+          </button>
+        ) : (
+          <>
+            <div className="sidebar-brand-inner">
+              <div className="sidebar-brand-dot">
+                <div className="pulse" />
+                <div className="core" />
+              </div>
+              <div className="sidebar-brand-text">
+                <span className="sidebar-brand-name">SWAMI KRUPA</span>
+                <span className="sidebar-brand-sub">Roadlines Studio</span>
+              </div>
             </div>
-          )}
-        </div>
-        <button
-          className="sidebar-collapse-btn"
-          onClick={onToggleCollapse}
-          title={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
-        >
-          {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
-        </button>
+            <button
+              type="button"
+              className="sidebar-collapse-btn"
+              onClick={onToggleCollapse}
+              title="Collapse Sidebar"
+              aria-label="Collapse Sidebar"
+            >
+              <ChevronLeft size={14} />
+            </button>
+          </>
+        )}
       </div>
 
       {/* Active Client Banner */}
@@ -162,7 +183,19 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
       </nav>
 
       {/* Footer */}
-      {!isCollapsed && (
+      {isCollapsed ? (
+        <div className="sidebar-footer collapsed">
+          <button
+            type="button"
+            className="sidebar-expand-bottom-btn"
+            onClick={onToggleCollapse}
+            title="Expand Sidebar"
+            aria-label="Expand Sidebar"
+          >
+            <ChevronRight size={14} />
+          </button>
+        </div>
+      ) : (
         <div className="sidebar-footer">
           <span className="sidebar-version">v2.0 — Client-Centric</span>
         </div>

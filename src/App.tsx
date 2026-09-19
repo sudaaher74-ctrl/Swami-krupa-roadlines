@@ -899,6 +899,8 @@ export const App: React.FC = () => {
           onSelectClient={handleSelectClient}
           onClearClient={handleClearClient}
           onViewClientProfile={handleViewClientProfile}
+          isSidebarCollapsed={sidebarCollapsed}
+          onToggleSidebar={() => setSidebarCollapsed((c) => !c)}
         />
 
         {/* Main Content Area */}

@@ -117,6 +117,33 @@ html, body, #root {
   flex-shrink: 0;
 }
 
+.btn-sidebar-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm, 6px);
+  background: #1e293b;
+  border: 1px solid #334155;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.btn-sidebar-toggle:hover {
+  background: #334155;
+  color: #38bdf8;
+  border-color: #475569;
+}
+
+.btn-sidebar-toggle.is-collapsed {
+  color: #38bdf8;
+  border-color: #38bdf888;
+  background: rgba(56, 189, 248, 0.1);
+}
+
 .brand-logo-badge {
   display: flex;
   align-items: center;
