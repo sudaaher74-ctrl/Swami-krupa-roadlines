@@ -13,8 +13,7 @@ import {
   Phone,
   BookmarkPlus,
   Share2,
-  Zap,
-  PlusCircle
+  Zap
 } from 'lucide-react';
 import { numberToIndianWords, formatCurrency } from '../utils/numberToWords';
 import { getInvoiceTotals, parseAdvanceAmount } from '../utils/invoiceCalculations';
@@ -42,7 +41,7 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
   customers = [],
   vehicles = [],
   savedInvoices = [],
-  onSaveAndNext,
+  onSaveAndNext: _onSaveAndNext,
   onQuickSaveCustomer,
   onQuickSaveVehicle,
   onOpenDirectoryModal,
@@ -473,16 +472,6 @@ export const InvoiceEditor: React.FC<InvoiceEditorProps> = ({
               {onOpenDirectoryModal && (
                 <button type="button" className="btn-header btn-header-ghost" onClick={onOpenDirectoryModal}>
                   <User size={14} /> Directory
-                </button>
-              )}
-              {onSaveAndNext && (
-                <button
-                  type="button"
-                  className="btn-header btn-header-save-next"
-                  onClick={onSaveAndNext}
-                  title="Save current bill and auto-prepare next sequential bill"
-                >
-                  <PlusCircle size={14} /> Save & Next
                 </button>
               )}
             </div>

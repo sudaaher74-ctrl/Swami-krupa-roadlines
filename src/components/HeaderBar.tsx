@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  Printer, Save, PlusCircle, ZoomIn, ZoomOut, RotateCcw,
+  Printer, PlusCircle, ZoomIn, ZoomOut, RotateCcw,
   Layout, Maximize2, Download, Share2, FileText,
   Phone, X, Edit2
 } from 'lucide-react';
@@ -13,7 +13,7 @@ interface HeaderBarProps {
   activeView: ActiveView;
   onNavigate: (view: ActiveView) => void;
   onNewInvoice: () => void;
-  onSaveInvoice: () => void;
+  onSaveInvoice?: () => void;
   onSaveAndNextInvoice?: () => void;
   onPrint: () => void;
   onDownloadPDF: () => void;
@@ -43,8 +43,8 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   activeView,
   onNavigate,
   onNewInvoice,
-  onSaveInvoice,
-  onSaveAndNextInvoice,
+  onSaveInvoice: _onSaveInvoice,
+  onSaveAndNextInvoice: _onSaveAndNextInvoice,
   onPrint,
   onDownloadPDF,
   onDownloadAllLRCopiesPDF,
@@ -185,27 +185,6 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                 </button>
               )}
 
-              <button
-                type="button"
-                className="btn-header btn-header-save"
-                onClick={onSaveInvoice}
-                title="Save Record"
-              >
-                <Save size={13} />
-                <span>Save</span>
-              </button>
-
-              {!isLR && onSaveAndNextInvoice && (
-                <button
-                  type="button"
-                  className="btn-header btn-header-save-next"
-                  onClick={onSaveAndNextInvoice}
-                  title="Save & Open Next Bill"
-                >
-                  <PlusCircle size={13} />
-                  <span>Next</span>
-                </button>
-              )}
 
               <button
                 type="button"
