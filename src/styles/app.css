@@ -71,6 +71,21 @@ html, body, #root {
   background: var(--bg-app);
 }
 
+/* Sidebar layout variant */
+.app-viewport-sidebar {
+  flex-direction: row !important;
+}
+
+/* Right panel (header + content) */
+.app-right-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+
 /* ==========================================================================
    Header Bar (Studio Navigation)
    ========================================================================== */

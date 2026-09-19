@@ -1,26 +1,17 @@
 import React from 'react';
 import {
-  Printer,
-  Save,
-  PlusCircle,
-  FolderOpen,
-  ZoomIn,
-  ZoomOut,
-  RotateCcw,
-  Sparkles,
-  Layout,
-  Maximize2,
-  Download,
-  Share2,
-  Users,
-  Fuel,
-  FileText,
-  ClipboardList
+  Printer, Save, PlusCircle, ZoomIn, ZoomOut, RotateCcw,
+  Layout, Maximize2, Download, Share2, FileText,
+  Phone, X, Edit2
 } from 'lucide-react';
+import { GlobalSearch } from './GlobalSearch';
+import type { ActiveView, CustomerRecord } from '../types/invoice';
+import { useStore } from '../store/useStore';
+import { formatCurrencyINR, getCustomerSummary } from '../utils/accountingService';
 
 interface HeaderBarProps {
-  activeDocType: 'dashboard' | 'invoice' | 'lr';
-  onDocTypeChange: (type: 'dashboard' | 'invoice' | 'lr') => void;
+  activeView: ActiveView;
+  onNavigate: (view: ActiveView) => void;
   onNewInvoice: () => void;
   onSaveInvoice: () => void;
   onSaveAndNextInvoice?: () => void;
@@ -43,11 +34,14 @@ interface HeaderBarProps {
   viewMode: 'split' | 'preview' | 'editor';
   onViewModeChange: (mode: 'split' | 'preview' | 'editor') => void;
   isDownloadingPDF?: boolean;
+  onSelectClient: (client: CustomerRecord) => void;
+  onClearClient: () => void;
+  onViewClientProfile: () => void;
 }
 
 export const HeaderBar: React.FC<HeaderBarProps> = ({
-  activeDocType,
-  onDocTypeChange,
+  activeView,
+  onNavigate,
   onNewInvoice,
   onSaveInvoice,
   onSaveAndNextInvoice,
@@ -55,268 +49,250 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   onDownloadPDF,
   onDownloadAllLRCopiesPDF,
   onWhatsAppShare,
-  onOpenSavedModal,
-  onOpenDirectoryModal,
-  onOpenTripSlipModal,
-  onOpenLedgerModal,
+  onOpenSavedModal: _onOpenSavedModal,
+  onOpenDirectoryModal: _onOpenDirectoryModal,
+  onOpenTripSlipModal: _onOpenTripSlipModal,
+  onOpenLedgerModal: _onOpenLedgerModal,
   onOpenBackupModal,
-  savedCount,
-  savedLRCount = 0,
+  savedCount: _savedCount,
+  savedLRCount: _savedLRCount = 0,
   zoom,
   onZoomIn,
   onZoomOut,
   onZoomReset,
-  onLoadOriginalSample,
+  onLoadOriginalSample: _onLoadOriginalSample,
   viewMode,
   onViewModeChange,
   isDownloadingPDF = false,
+  onSelectClient,
+  onClearClient,
+  onViewClientProfile,
 }) => {
-  const isLR = activeDocType === 'lr';
+  const isLR = activeView === 'lr';
+  const isEditorView = activeView === 'invoice' || activeView === 'lr';
+  const { activeClient, savedInvoices, payments } = useStore();
+
+  const clientSummary = activeClient
+    ? getCustomerSummary(activeClient.id, activeClient, savedInvoices, payments)
+    : null;
 
   return (
-    <header className="app-header no-print">
-      {/* 1. Left: Brand Badge & Document Type Switcher */}
-      <div className="header-left">
-        <div className="brand-logo-badge" title="Swami Krupa Roadlines Billing Studio">
-          <div className="brand-dot-pulse">
-            <div className="pulse"></div>
-            <div className="core"></div>
+    <>
+      <header className="app-header no-print">
+        {/* Left: Search */}
+        <div className="header-left">
+          <GlobalSearch onSelectClient={onSelectClient} onNavigate={onNavigate} />
+        </div>
+
+        {/* Center: Editor Controls (only in invoice/LR editor views) */}
+        <div className="header-center">
+          {isEditorView && (
+            <>
+              <div className="segmented-pill-selector">
+                <button
+                  type="button"
+                  className={`pill-btn split-view-btn ${viewMode === 'split' ? 'active' : ''}`}
+                  onClick={() => onViewModeChange('split')}
+                  title="Split Editor & Preview"
+                >
+                  <Layout size={13} />
+                  <span>Split</span>
+                </button>
+                <button
+                  type="button"
+                  className={`pill-btn ${viewMode === 'editor' ? 'active' : ''}`}
+                  onClick={() => onViewModeChange('editor')}
+                  title="Form Editor"
+                >
+                  <FileText size={13} />
+                  <span>Editor</span>
+                </button>
+                <button
+                  type="button"
+                  className={`pill-btn ${viewMode === 'preview' ? 'active' : ''}`}
+                  onClick={() => onViewModeChange('preview')}
+                  title="Full A4 Preview"
+                >
+                  <Maximize2 size={13} />
+                  <span>Preview</span>
+                </button>
+              </div>
+
+              <div className="zoom-widget">
+                <button type="button" className="zoom-btn" onClick={onZoomOut} title="Zoom Out">
+                  <ZoomOut size={12} />
+                </button>
+                <span className="zoom-value" onClick={onZoomReset} title="Reset Zoom">
+                  {Math.round(zoom * 100)}%
+                </span>
+                <button type="button" className="zoom-btn" onClick={onZoomIn} title="Zoom In">
+                  <ZoomIn size={12} />
+                </button>
+                <button type="button" className="zoom-btn" onClick={onZoomReset} title="Reset">
+                  <RotateCcw size={11} />
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Right: Actions */}
+        <div className="header-right">
+          {isEditorView && (
+            <div className="header-actions-group primary-actions">
+              <button
+                type="button"
+                className="btn-header btn-header-ghost"
+                onClick={onNewInvoice}
+                title={isLR ? 'Create Blank e-LR' : 'Create Blank Bill'}
+              >
+                <PlusCircle size={13} />
+                <span>{isLR ? 'New LR' : 'New Bill'}</span>
+              </button>
+
+              <button
+                type="button"
+                className="btn-header btn-header-whatsapp"
+                onClick={onWhatsAppShare}
+                title="Share on WhatsApp"
+              >
+                <Share2 size={13} />
+                <span>WhatsApp</span>
+              </button>
+
+              <button
+                type="button"
+                className="btn-header btn-header-pdf"
+                onClick={onDownloadPDF}
+                disabled={isDownloadingPDF}
+                title={isLR ? 'Download e-LR PDF' : 'Download Invoice PDF'}
+              >
+                <Download size={13} />
+                <span>{isDownloadingPDF ? 'Exporting…' : 'PDF'}</span>
+              </button>
+
+              {isLR && onDownloadAllLRCopiesPDF && (
+                <button
+                  type="button"
+                  className="btn-header btn-header-save-next"
+                  onClick={onDownloadAllLRCopiesPDF}
+                  disabled={isDownloadingPDF}
+                  title="Download 3-page: Consignor + Consignee + Driver"
+                  style={{ background: 'linear-gradient(135deg, #4f46e5, #6366f1)' }}
+                >
+                  <Download size={13} />
+                  <span>3-in-1 PDF</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                className="btn-header btn-header-save"
+                onClick={onSaveInvoice}
+                title="Save Record"
+              >
+                <Save size={13} />
+                <span>Save</span>
+              </button>
+
+              {!isLR && onSaveAndNextInvoice && (
+                <button
+                  type="button"
+                  className="btn-header btn-header-save-next"
+                  onClick={onSaveAndNextInvoice}
+                  title="Save & Open Next Bill"
+                >
+                  <PlusCircle size={13} />
+                  <span>Next</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                className="btn-header btn-header-print"
+                onClick={onPrint}
+                title="Print Document"
+              >
+                <Printer size={13} />
+                <span>Print</span>
+              </button>
+            </div>
+          )}
+
+          {!isEditorView && (
+            <div className="header-actions-group">
+              {onOpenBackupModal && (
+                <button
+                  type="button"
+                  className="btn-header btn-header-ghost"
+                  onClick={onOpenBackupModal}
+                  title="Backup & Restore"
+                >
+                  <span>💾 Backup</span>
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      </header>
+
+      {/* Active Client Bar */}
+      {activeClient && (
+        <div className="active-client-bar no-print">
+          <div className="active-client-bar-inner">
+            <div className="acb-status-dot" />
+            <div className="acb-client-info">
+              <span className="acb-label">CLIENT</span>
+              <span className="acb-name">{activeClient.name}</span>
+              {activeClient.gstin && <span className="acb-gstin">{activeClient.gstin}</span>}
+              {activeClient.phone && (
+                <span className="acb-phone">
+                  <Phone size={11} />
+                  {activeClient.phone}
+                </span>
+              )}
+            </div>
+
+            {clientSummary && (
+              <div className="acb-financials">
+                <div className="acb-fin-item">
+                  <span className="acb-fin-label">Outstanding</span>
+                  <span className="acb-fin-value outstanding">
+                    {formatCurrencyINR(clientSummary.outstanding)}
+                  </span>
+                </div>
+                <div className="acb-fin-item">
+                  <span className="acb-fin-label">Invoiced</span>
+                  <span className="acb-fin-value">{formatCurrencyINR(clientSummary.totalInvoiced)}</span>
+                </div>
+                <div className="acb-fin-item">
+                  <span className="acb-fin-label">Received</span>
+                  <span className="acb-fin-value received">{formatCurrencyINR(clientSummary.totalReceived)}</span>
+                </div>
+              </div>
+            )}
+
+            <div className="acb-actions">
+              <button
+                className="acb-btn acb-btn-primary"
+                onClick={onViewClientProfile}
+                title="View Client Profile"
+              >
+                <Edit2 size={12} />
+                View Profile
+              </button>
+              <button
+                className="acb-btn acb-btn-ghost"
+                onClick={onClearClient}
+                title="Change Client"
+              >
+                <X size={12} />
+                Change
+              </button>
+            </div>
           </div>
-          <span className="brand-title">SWAMI KRUPA</span>
         </div>
-
-        {/* Segmented Document Mode Selector */}
-        <div className="doc-mode-switcher-pill">
-          <button
-            type="button"
-            className={`doc-mode-btn ${activeDocType === 'dashboard' ? 'active' : ''}`}
-            onClick={() => onDocTypeChange('dashboard')}
-            title="Overview & Analytics"
-          >
-            <Layout size={13} />
-            <span>Dashboard</span>
-          </button>
-          <button
-            type="button"
-            className={`doc-mode-btn ${activeDocType === 'invoice' ? 'active' : ''}`}
-            onClick={() => onDocTypeChange('invoice')}
-            title="Switch to Tax Invoice Generator"
-          >
-            <FileText size={13} />
-            <span>Tax Invoice</span>
-          </button>
-          <button
-            type="button"
-            className={`doc-mode-btn ${isLR ? 'active' : ''}`}
-            onClick={() => onDocTypeChange('lr')}
-            title="Switch to Goods Consignment Note (e-LR / Bilty)"
-          >
-            <ClipboardList size={13} />
-            <span>e-LR / Bilty</span>
-          </button>
-        </div>
-      </div>
-
-      {/* 2. Center: View Controls & Zoom */}
-      <div className="header-center">
-        <div className="segmented-pill-selector">
-          <button
-            type="button"
-            className={`pill-btn split-view-btn ${viewMode === 'split' ? 'active' : ''}`}
-            onClick={() => onViewModeChange('split')}
-            title="Split Editor & Preview"
-          >
-            <Layout size={13} />
-            <span>Split</span>
-          </button>
-          <button
-            type="button"
-            className={`pill-btn ${viewMode === 'editor' ? 'active' : ''}`}
-            onClick={() => onViewModeChange('editor')}
-            title="Form Editor"
-          >
-            <FileText size={13} />
-            <span>Editor</span>
-          </button>
-          <button
-            type="button"
-            className={`pill-btn ${viewMode === 'preview' ? 'active' : ''}`}
-            onClick={() => onViewModeChange('preview')}
-            title="Full A4 Preview"
-          >
-            <Maximize2 size={13} />
-            <span>Preview</span>
-          </button>
-        </div>
-
-        <div className="zoom-widget">
-          <button type="button" className="zoom-btn" onClick={onZoomOut} title="Zoom Out">
-            <ZoomOut size={12} />
-          </button>
-          <span className="zoom-value" onClick={onZoomReset} title="Reset Zoom">
-            {Math.round(zoom * 100)}%
-          </span>
-          <button type="button" className="zoom-btn" onClick={onZoomIn} title="Zoom In">
-            <ZoomIn size={12} />
-          </button>
-          <button type="button" className="zoom-btn" onClick={onZoomReset} title="Reset">
-            <RotateCcw size={11} />
-          </button>
-        </div>
-      </div>
-
-      {/* 3. Right: Utility Tools & Primary Export Actions */}
-      <div className="header-right">
-        {/* Utilities Group */}
-        <div className="header-actions-group">
-          <button
-            type="button"
-            className="btn-header btn-header-ghost"
-            onClick={onOpenDirectoryModal}
-            title="Customer & Vehicle Directory"
-          >
-            <Users size={13} />
-            <span>Directory</span>
-          </button>
-
-          {onOpenLedgerModal && (
-            <button
-              type="button"
-              className="btn-header btn-header-ghost"
-              onClick={onOpenLedgerModal}
-              title="Customer Khata & Payment Outstanding Ledger"
-              style={{ color: '#34d399' }}
-            >
-              <FileText size={13} />
-              <span>Khata</span>
-            </button>
-          )}
-
-          <button
-            type="button"
-            className="btn-header btn-header-ghost"
-            onClick={onOpenSavedModal}
-            title={isLR ? `Saved e-LRs (${savedLRCount})` : `Saved Bills (${savedCount})`}
-          >
-            <FolderOpen size={13} />
-            <span>{isLR ? `e-LRs (${savedLRCount})` : `Bills (${savedCount})`}</span>
-          </button>
-
-          {onOpenTripSlipModal && (
-            <button
-              type="button"
-              className="btn-header btn-header-ghost"
-              onClick={onOpenTripSlipModal}
-              title="Trip Advance & Diesel Slips"
-              style={{ color: '#38bdf8' }}
-            >
-              <Fuel size={13} />
-              <span>Trip Slips</span>
-            </button>
-          )}
-
-          {onOpenBackupModal && (
-            <button
-              type="button"
-              className="btn-header btn-header-ghost"
-              onClick={onOpenBackupModal}
-              title="Backup & Restore Vault"
-            >
-              <span>💾 Backup</span>
-            </button>
-          )}
-
-          <button
-            type="button"
-            className="btn-header btn-header-sample"
-            onClick={onLoadOriginalSample}
-            title="Load Demo Sample"
-          >
-            <Sparkles size={13} />
-            <span>Demo</span>
-          </button>
-        </div>
-
-        {/* Primary Action Buttons */}
-        <div className="header-actions-group primary-actions">
-          <button
-            type="button"
-            className="btn-header btn-header-ghost"
-            onClick={onNewInvoice}
-            title={isLR ? 'Create Blank e-LR' : 'Create Blank Bill'}
-          >
-            <PlusCircle size={13} />
-            <span>{isLR ? 'New LR' : 'New Bill'}</span>
-          </button>
-
-          <button
-            type="button"
-            className="btn-header btn-header-whatsapp"
-            onClick={onWhatsAppShare}
-            title="Share on WhatsApp"
-          >
-            <Share2 size={13} />
-            <span>WhatsApp</span>
-          </button>
-
-          <button
-            type="button"
-            className="btn-header btn-header-pdf"
-            onClick={onDownloadPDF}
-            disabled={isDownloadingPDF}
-            title={isLR ? 'Download Current A4 e-LR PDF' : 'Download Clean A4 Invoice PDF'}
-          >
-            <Download size={13} />
-            <span>{isDownloadingPDF ? 'Exporting...' : 'PDF'}</span>
-          </button>
-
-          {isLR && onDownloadAllLRCopiesPDF && (
-            <button
-              type="button"
-              className="btn-header btn-header-save-next"
-              onClick={onDownloadAllLRCopiesPDF}
-              disabled={isDownloadingPDF}
-              title="Download 3-page PDF with Consignor, Consignee & Driver copies"
-              style={{ background: 'linear-gradient(135deg, #4f46e5, #6366f1)' }}
-            >
-              <Download size={13} />
-              <span>3-in-1 PDF</span>
-            </button>
-          )}
-
-          <button
-            type="button"
-            className="btn-header btn-header-save"
-            onClick={onSaveInvoice}
-            title="Save Record"
-          >
-            <Save size={13} />
-            <span>Save</span>
-          </button>
-
-          {!isLR && onSaveAndNextInvoice && (
-            <button
-              type="button"
-              className="btn-header btn-header-save-next"
-              onClick={onSaveAndNextInvoice}
-              title="Save & Open Next Bill"
-            >
-              <PlusCircle size={13} />
-              <span>Next</span>
-            </button>
-          )}
-
-          <button
-            type="button"
-            className="btn-header btn-header-print"
-            onClick={onPrint}
-            title="Print Document"
-          >
-            <Printer size={13} />
-            <span>Print</span>
-          </button>
-        </div>
-      </div>
-    </header>
+      )}
+    </>
   );
 };

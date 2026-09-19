@@ -38,6 +38,7 @@ export interface InvoiceData {
   clientName: string; // e.g. "ADNISHA TRANSPORT"
   clientPhone?: string; // e.g. "+91 9876543210"
   clientAddress?: string; // e.g. "Shop No 5, Ground Floor, Panvel"
+  customerId?: string; // FK to CustomerRecord.id — links invoice to client
   billNo: string; // e.g. "122/ 2026-27"
   date: string; // e.g. "22-08-2026"
   beNo: string; // e.g. "3188241"
@@ -62,9 +63,32 @@ export interface InvoiceData {
 export interface CustomerRecord {
   id: string;
   name: string;
+  // Basic contact
   phone?: string;
+  alternatePhone?: string;
+  email?: string;
+  // Business identity
   gstin?: string;
-  address?: string;
+  pan?: string;
+  customerCode?: string;
+  // Address
+  address?: string;           // kept for backwards compat
+  billingAddress?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+  // Business details
+  contactPerson?: string;
+  paymentTerms?: string;      // e.g. "30 days"
+  creditLimit?: number;
+  // Opening balance
+  openingBalance?: number;
+  openingBalanceType?: 'debit' | 'credit'; // debit = they owe us
+  // Meta
+  status?: 'active' | 'inactive';
+  notes?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface VehicleRecord {
@@ -111,6 +135,7 @@ export interface ConsignmentNote {
   date: string; // e.g. "24/08/2026"
   vehicleNo: string; // e.g. "MH46CL8146"
   branchName?: string; // e.g. "NAVI MUMBAI BRANCH"
+  customerId?: string; // FK to CustomerRecord.id — links LR to client
 
   // Consignor (Sender)
   consignorName: string; // e.g. "M/s Alembic Pharmaceuticals LTD"
@@ -160,3 +185,71 @@ export interface ConsignmentNote {
   createdAt: string;
   updatedAt?: string;
 }
+
+// ============================================================
+// ACCOUNTING TYPES — New for v2
+// ============================================================
+
+export interface Payment {
+  id: string;
+  customerId: string;
+  invoiceId?: string;           // optional: link to specific invoice
+  paymentDate: string;          // e.g. "25-09-2026"
+  amount: number;
+  paymentMode: 'BANK_TRANSFER' | 'UPI' | 'CHEQUE' | 'CASH' | 'OTHER';
+  referenceNumber?: string;     // cheque number, UTR, etc.
+  notes?: string;
+  createdAt: string;
+  createdBy?: string;
+}
+
+export type LedgerTransactionType =
+  | 'INVOICE'
+  | 'PAYMENT'
+  | 'OPENING_BALANCE'
+  | 'CREDIT_NOTE'
+  | 'DEBIT_NOTE'
+  | 'ADJUSTMENT';
+
+export interface LedgerTransaction {
+  id: string;
+  customerId: string;
+  invoiceId?: string;
+  paymentId?: string;
+  transactionDate: string;
+  transactionType: LedgerTransactionType;
+  referenceNumber?: string;
+  description: string;
+  debit: number;    // money owed to us (invoice)
+  credit: number;   // money received from customer (payment)
+  createdAt: string;
+  createdBy?: string;
+}
+
+export interface CustomerSummary {
+  customerId: string;
+  totalInvoiced: number;
+  totalReceived: number;
+  outstanding: number;
+  openingBalance: number;
+  openingBalanceType: 'debit' | 'credit';
+  invoiceCount: number;
+  paymentCount: number;
+  overdueAmount: number;
+}
+
+export type ActiveView =
+  | 'dashboard'
+  | 'clients'
+  | 'client-dashboard'
+  | 'invoice'          // editor for creating/editing an invoice
+  | 'invoice-list'     // list of invoices (global or client-filtered)
+  | 'lr'               // e-LR editor
+  | 'lr-list'          // list of LRs
+  | 'account'          // accounting tabs (overview, ledger, payments, outstanding)
+  | 'trips'
+  | 'vehicles'
+  | 'expenses'
+  | 'documents'
+  | 'reports'
+  | 'settings';

@@ -4,13 +4,20 @@ import {
   TrendingUp, 
   AlertCircle, 
   FileText, 
-  Clock 
+  Clock,
+  Users
 } from 'lucide-react';
 import { formatCurrency } from '../utils/numberToWords';
 import { getInvoiceTotals } from '../utils/invoiceCalculations';
+import type { ActiveView, CustomerRecord } from '../types/invoice';
 
-export const Dashboard: React.FC = () => {
-  const { savedInvoices, consignmentNotes, tripSlips } = useStore();
+interface DashboardProps {
+  onSelectClient?: (client: CustomerRecord) => void;
+  onNavigate?: (view: ActiveView) => void;
+}
+
+export const Dashboard: React.FC<DashboardProps> = ({ onSelectClient, onNavigate }) => {
+  const { savedInvoices, consignmentNotes, tripSlips, customers } = useStore();
 
   const metrics = useMemo(() => {
     const now = new Date();
@@ -23,10 +30,8 @@ export const Dashboard: React.FC = () => {
     savedInvoices.forEach(inv => {
       const totals = getInvoiceTotals(inv);
       
-      // Calculate this month's billing
-      // Note: Assumes date format DD/MM/YYYY or DD-MM-YYYY
-      const parts = inv.date.split(/[-/]/);
-      if (parts.length === 3) {
+      const parts = inv.date?.split(/[-/]/);
+      if (parts?.length === 3) {
         const invMonth = parseInt(parts[1], 10) - 1;
         const invYear = parseInt(parts[2].length === 2 ? '20' + parts[2] : parts[2], 10);
         if (invMonth === currentMonth && invYear === currentYear) {
@@ -34,10 +39,9 @@ export const Dashboard: React.FC = () => {
         }
       }
 
-      // Calculate outstanding
       if (inv.paymentStatus !== 'PAID') {
         const received = inv.amountReceived || 0;
-        totalOutstanding += (totals.balanceAmount - received);
+        totalOutstanding += Math.max(0, totals.balanceAmount - received);
       }
     });
 
@@ -46,9 +50,10 @@ export const Dashboard: React.FC = () => {
       totalOutstanding,
       totalInvoices: savedInvoices.length,
       totalLRs: consignmentNotes.length,
-      totalTrips: tripSlips.length
+      totalTrips: tripSlips.length,
+      totalClients: customers.length,
     };
-  }, [savedInvoices, consignmentNotes, tripSlips]);
+  }, [savedInvoices, consignmentNotes, tripSlips, customers]);
 
   // Get 5 most recent unpaid or recent invoices
   const recentInvoices = useMemo(() => {
@@ -93,7 +98,11 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* Metric Card 3 */}
-        <div style={{ background: '#1e293b', padding: '24px', borderRadius: '12px', border: '1px solid #334155' }}>
+        <div
+          style={{ background: '#1e293b', padding: '24px', borderRadius: '12px', border: '1px solid #334155', cursor: 'pointer' }}
+          onClick={() => onNavigate?.('lr-list')}
+          title="View all e-LRs"
+        >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <h3 style={{ color: '#94a3b8', fontSize: '14px', fontWeight: 600 }}>Total e-LR Notes</h3>
             <div style={{ background: '#0f172a', padding: '8px', borderRadius: '8px' }}>
@@ -102,6 +111,23 @@ export const Dashboard: React.FC = () => {
           </div>
           <div style={{ fontSize: '32px', fontWeight: 700, color: '#f1f5f9' }}>
             {metrics.totalLRs}
+          </div>
+        </div>
+
+        {/* Metric Card 4: Clients */}
+        <div
+          style={{ background: '#1e293b', padding: '24px', borderRadius: '12px', border: '1px solid #334155', cursor: 'pointer' }}
+          onClick={() => onNavigate?.('clients')}
+          title="View all clients"
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <h3 style={{ color: '#94a3b8', fontSize: '14px', fontWeight: 600 }}>Total Clients</h3>
+            <div style={{ background: '#0f172a', padding: '8px', borderRadius: '8px' }}>
+              <Users size={20} color="#a78bfa" />
+            </div>
+          </div>
+          <div style={{ fontSize: '32px', fontWeight: 700, color: '#a78bfa' }}>
+            {metrics.totalClients}
           </div>
         </div>
 
@@ -129,7 +155,17 @@ export const Dashboard: React.FC = () => {
                 const totals = getInvoiceTotals(inv);
                 const isPaid = inv.paymentStatus === 'PAID';
                 return (
-                  <tr key={inv.id} style={{ borderBottom: '1px solid #334155' }}>
+                  <tr
+                    key={inv.id}
+                    style={{ borderBottom: '1px solid #334155', cursor: 'pointer' }}
+                    title="Click to view party details"
+                    onClick={() => {
+                      const cust = customers.find((c) => c.id === inv.customerId || c.name?.toLowerCase() === inv.clientName?.toLowerCase());
+                      if (cust && onSelectClient) {
+                        onSelectClient(cust);
+                      }
+                    }}
+                  >
                     <td style={{ padding: '16px', fontWeight: 600 }}>{inv.billNo}</td>
                     <td style={{ padding: '16px', color: '#cbd5e1' }}>{inv.date}</td>
                     <td style={{ padding: '16px', color: '#cbd5e1' }}>{inv.clientName}</td>

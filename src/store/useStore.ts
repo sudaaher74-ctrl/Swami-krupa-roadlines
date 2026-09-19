@@ -1,11 +1,13 @@
 import { create } from 'zustand';
-import type { InvoiceData, CustomerRecord, VehicleRecord, TripSlip, ConsignmentNote } from '../types/invoice';
+import type { InvoiceData, CustomerRecord, VehicleRecord, TripSlip, ConsignmentNote, Payment, LedgerTransaction } from '../types/invoice';
 import {
   fetchInvoices,
   fetchConsignmentNotes,
   fetchCustomers,
   fetchVehicles,
-  fetchTripSlips
+  fetchTripSlips,
+  fetchPayments,
+  fetchLedgerTransactions,
 } from '../utils/supabaseService';
 import {
   defaultInvoice,
@@ -39,10 +41,10 @@ const defaultTripSlipsList: TripSlip[] = [
 ];
 
 const defaultCustomersList: CustomerRecord[] = [
-  { id: 'c-1', name: 'ADNISHA TRANSPORT', phone: '9987010013', address: 'Navi Mumbai' },
-  { id: 'c-2', name: 'M/s Alembic Pharmaceuticals LTD', phone: '9820011223', address: 'Nhava Sheva Mumbai Allcargo CFS' },
-  { id: 'c-3', name: 'CONTINENTAL LOGISTICS', phone: '9820011223', address: 'Nhava Sheva' },
-  { id: 'c-4', name: 'SHREE BALAJI ROADWAYS', phone: '9888522803', address: 'Kalamboli' },
+  { id: 'c-1', name: 'ADNISHA TRANSPORT', phone: '9987010013', address: 'Navi Mumbai', status: 'active' },
+  { id: 'c-2', name: 'M/s Alembic Pharmaceuticals LTD', phone: '9820011223', address: 'Nhava Sheva Mumbai Allcargo CFS', status: 'active' },
+  { id: 'c-3', name: 'CONTINENTAL LOGISTICS', phone: '9820011223', address: 'Nhava Sheva', status: 'active' },
+  { id: 'c-4', name: 'SHREE BALAJI ROADWAYS', phone: '9888522803', address: 'Kalamboli', status: 'active' },
 ];
 
 const defaultVehiclesList: VehicleRecord[] = [
@@ -56,6 +58,9 @@ const LOCAL_STORAGE_KEY_CUSTOMERS = 'swami_krupa_saved_customers_v1';
 const LOCAL_STORAGE_KEY_VEHICLES = 'swami_krupa_saved_vehicles_v1';
 const LOCAL_STORAGE_KEY_TRIP_SLIPS = 'swami_krupa_trip_slips_v1';
 const LOCAL_STORAGE_KEY_LR_NOTES = 'swami_krupa_consignment_notes_v1';
+const LOCAL_STORAGE_KEY_PAYMENTS = 'swami_krupa_payments_v1';
+const LOCAL_STORAGE_KEY_LEDGER = 'swami_krupa_ledger_v1';
+const LOCAL_STORAGE_KEY_ACTIVE_CLIENT = 'swami_krupa_active_client_v1';
 
 export interface AppState {
   savedInvoices: InvoiceData[];
@@ -63,6 +68,9 @@ export interface AppState {
   customers: CustomerRecord[];
   vehicles: VehicleRecord[];
   tripSlips: TripSlip[];
+  payments: Payment[];
+  ledgerTransactions: LedgerTransaction[];
+  activeClient: CustomerRecord | null;
 
   // Setters
   setSavedInvoices: (invoices: InvoiceData[]) => void;
@@ -70,9 +78,20 @@ export interface AppState {
   setCustomers: (customers: CustomerRecord[]) => void;
   setVehicles: (vehicles: VehicleRecord[]) => void;
   setTripSlips: (slips: TripSlip[]) => void;
+  setPayments: (payments: Payment[]) => void;
+  setLedgerTransactions: (txns: LedgerTransaction[]) => void;
+  setActiveClient: (client: CustomerRecord | null) => void;
 
   // Actions
-  fetchInitialData: () => Promise<{ invs: InvoiceData[], notes: ConsignmentNote[], custs: CustomerRecord[], vehs: VehicleRecord[], slips: TripSlip[] }>;
+  fetchInitialData: () => Promise<{
+    invs: InvoiceData[];
+    notes: ConsignmentNote[];
+    custs: CustomerRecord[];
+    vehs: VehicleRecord[];
+    slips: TripSlip[];
+    pays: Payment[];
+    ledger: LedgerTransaction[];
+  }>;
   resetToDemo: () => void;
 }
 
@@ -92,39 +111,65 @@ export const useStore = create<AppState>((set, get) => ({
   customers: getLocalOrDefault<CustomerRecord[]>(LOCAL_STORAGE_KEY_CUSTOMERS, defaultCustomersList),
   vehicles: getLocalOrDefault<VehicleRecord[]>(LOCAL_STORAGE_KEY_VEHICLES, defaultVehiclesList),
   tripSlips: getLocalOrDefault<TripSlip[]>(LOCAL_STORAGE_KEY_TRIP_SLIPS, defaultTripSlipsList),
+  payments: getLocalOrDefault<Payment[]>(LOCAL_STORAGE_KEY_PAYMENTS, []),
+  ledgerTransactions: getLocalOrDefault<LedgerTransaction[]>(LOCAL_STORAGE_KEY_LEDGER, []),
+  activeClient: getLocalOrDefault<CustomerRecord | null>(LOCAL_STORAGE_KEY_ACTIVE_CLIENT, null),
 
   setSavedInvoices: (invoices) => {
     set({ savedInvoices: invoices });
     try { localStorage.setItem(LOCAL_STORAGE_KEY_INVOICES, JSON.stringify(invoices)); } catch (e) {}
   },
-  
+
   setConsignmentNotes: (notes) => {
     set({ consignmentNotes: notes });
     try { localStorage.setItem(LOCAL_STORAGE_KEY_LR_NOTES, JSON.stringify(notes)); } catch (e) {}
   },
-  
+
   setCustomers: (customers) => {
     set({ customers });
     try { localStorage.setItem(LOCAL_STORAGE_KEY_CUSTOMERS, JSON.stringify(customers)); } catch (e) {}
   },
-  
+
   setVehicles: (vehicles) => {
     set({ vehicles });
     try { localStorage.setItem(LOCAL_STORAGE_KEY_VEHICLES, JSON.stringify(vehicles)); } catch (e) {}
   },
-  
+
   setTripSlips: (slips) => {
     set({ tripSlips: slips });
     try { localStorage.setItem(LOCAL_STORAGE_KEY_TRIP_SLIPS, JSON.stringify(slips)); } catch (e) {}
   },
 
+  setPayments: (payments) => {
+    set({ payments });
+    try { localStorage.setItem(LOCAL_STORAGE_KEY_PAYMENTS, JSON.stringify(payments)); } catch (e) {}
+  },
+
+  setLedgerTransactions: (txns) => {
+    set({ ledgerTransactions: txns });
+    try { localStorage.setItem(LOCAL_STORAGE_KEY_LEDGER, JSON.stringify(txns)); } catch (e) {}
+  },
+
+  setActiveClient: (client) => {
+    set({ activeClient: client });
+    try {
+      if (client) {
+        localStorage.setItem(LOCAL_STORAGE_KEY_ACTIVE_CLIENT, JSON.stringify(client));
+      } else {
+        localStorage.removeItem(LOCAL_STORAGE_KEY_ACTIVE_CLIENT);
+      }
+    } catch (e) {}
+  },
+
   fetchInitialData: async () => {
-    const [invs, notes, custs, vehs, slips] = await Promise.all([
+    const [invs, notes, custs, vehs, slips, pays, ledger] = await Promise.all([
       fetchInvoices(),
       fetchConsignmentNotes(),
       fetchCustomers(),
       fetchVehicles(),
       fetchTripSlips(),
+      fetchPayments(),
+      fetchLedgerTransactions(),
     ]);
 
     const updates: Partial<AppState> = {};
@@ -134,10 +179,18 @@ export const useStore = create<AppState>((set, get) => ({
     if (custs.length > 0) updates.customers = custs;
     if (vehs.length > 0) updates.vehicles = vehs;
     if (slips.length > 0) updates.tripSlips = slips;
+    if (pays.length > 0) updates.payments = pays;
+    if (ledger.length > 0) updates.ledgerTransactions = ledger;
+
+    // Refresh active client from updated customer list
+    const currentActive = get().activeClient;
+    if (currentActive && custs.length > 0) {
+      const refreshed = custs.find(c => c.id === currentActive.id);
+      if (refreshed) updates.activeClient = refreshed;
+    }
 
     if (Object.keys(updates).length > 0) {
       set(updates);
-      // Persist to local storage after fetch
       const state = get();
       try {
         if (updates.savedInvoices) localStorage.setItem(LOCAL_STORAGE_KEY_INVOICES, JSON.stringify(state.savedInvoices));
@@ -145,10 +198,12 @@ export const useStore = create<AppState>((set, get) => ({
         if (updates.customers) localStorage.setItem(LOCAL_STORAGE_KEY_CUSTOMERS, JSON.stringify(state.customers));
         if (updates.vehicles) localStorage.setItem(LOCAL_STORAGE_KEY_VEHICLES, JSON.stringify(state.vehicles));
         if (updates.tripSlips) localStorage.setItem(LOCAL_STORAGE_KEY_TRIP_SLIPS, JSON.stringify(state.tripSlips));
+        if (updates.payments) localStorage.setItem(LOCAL_STORAGE_KEY_PAYMENTS, JSON.stringify(state.payments));
+        if (updates.ledgerTransactions) localStorage.setItem(LOCAL_STORAGE_KEY_LEDGER, JSON.stringify(state.ledgerTransactions));
       } catch (e) {}
     }
-    
-    return { invs, notes, custs, vehs, slips };
+
+    return { invs, notes, custs, vehs, slips, pays, ledger };
   },
 
   resetToDemo: () => {
@@ -158,16 +213,20 @@ export const useStore = create<AppState>((set, get) => ({
       customers: defaultCustomersList,
       vehicles: defaultVehiclesList,
       tripSlips: defaultTripSlipsList,
+      payments: [],
+      ledgerTransactions: [],
+      activeClient: null,
     };
     set(defaultData);
-    
-    // Clear local storage arrays
     try {
       localStorage.setItem(LOCAL_STORAGE_KEY_INVOICES, JSON.stringify([defaultInvoice]));
       localStorage.setItem(LOCAL_STORAGE_KEY_LR_NOTES, JSON.stringify([defaultConsignmentNote]));
       localStorage.setItem(LOCAL_STORAGE_KEY_CUSTOMERS, JSON.stringify(defaultCustomersList));
       localStorage.setItem(LOCAL_STORAGE_KEY_VEHICLES, JSON.stringify(defaultVehiclesList));
       localStorage.setItem(LOCAL_STORAGE_KEY_TRIP_SLIPS, JSON.stringify(defaultTripSlipsList));
-    } catch(e) {}
+      localStorage.removeItem(LOCAL_STORAGE_KEY_PAYMENTS);
+      localStorage.removeItem(LOCAL_STORAGE_KEY_LEDGER);
+      localStorage.removeItem(LOCAL_STORAGE_KEY_ACTIVE_CLIENT);
+    } catch (e) {}
   }
 }));

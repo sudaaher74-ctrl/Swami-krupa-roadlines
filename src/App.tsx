@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { InvoiceData, CustomerRecord, VehicleRecord, TripSlip, ConsignmentNote } from './types/invoice';
+import type { InvoiceData, CustomerRecord, VehicleRecord, TripSlip, ConsignmentNote, ActiveView } from './types/invoice';
 import {
   defaultInvoice,
   createNewInvoice,
@@ -8,6 +8,7 @@ import {
 } from './utils/defaultData';
 import { calculateNextBillNumber, recordBillSequenceNumber } from './utils/billNumberUtils';
 import { HeaderBar } from './components/HeaderBar';
+import { SidebarNav } from './components/SidebarNav';
 import { InvoiceDocument } from './components/InvoiceDocument';
 import { ModernInvoiceDocument } from './components/ModernInvoiceDocument';
 import { InvoiceEditor } from './components/InvoiceEditor';
@@ -21,6 +22,13 @@ import { ConsignmentNoteEditor } from './components/ConsignmentNoteEditor';
 import { ConsignmentNoteDocument } from './components/ConsignmentNoteDocument';
 import { SavedConsignmentNotesModal } from './components/SavedConsignmentNotesModal';
 import { Dashboard } from './components/Dashboard';
+import { ClientsListPage } from './components/clients/ClientsListPage';
+import { ClientDashboard } from './components/clients/ClientDashboard';
+import { ClientProfileModal } from './components/clients/ClientProfileModal';
+import { AccountPage } from './components/account/AccountPage';
+import { PaymentModal } from './components/account/PaymentModal';
+import { DocumentsPage } from './components/documents/DocumentsPage';
+import { ReportsPage } from './components/reports/ReportsPage';
 import {
   downloadInvoicePDF,
   openWhatsAppShare,
@@ -30,15 +38,21 @@ import {
 } from './utils/exportUtils';
 import { CheckCircle2 } from 'lucide-react';
 import './styles/app.css';
+import './styles/sidebar.css';
+import './styles/accounting.css';
 import { useStore } from './store/useStore';
+import { saveCustomer as saveCustomerSvc } from './utils/supabaseService';
 
 import {
   saveInvoice, deleteInvoice,
   saveConsignmentNote, deleteConsignmentNote,
   saveCustomer, deleteCustomer,
   saveVehicle, deleteVehicle,
-  saveTripSlip, deleteTripSlip
+  saveTripSlip, deleteTripSlip,
+  savePayment,
 } from './utils/supabaseService';
+import { createPaymentId } from './utils/accountingService';
+import type { Payment } from './types/invoice';
 
 
 const LOCAL_STORAGE_KEY_INVOICES = 'swami_krupa_saved_invoices_v1';
@@ -47,8 +61,21 @@ const LOCAL_STORAGE_KEY_BANK = 'swami_krupa_bank_details_v1';
 const LOCAL_STORAGE_KEY_LR_NOTES = 'swami_krupa_consignment_notes_v1';
 
 export const App: React.FC = () => {
-  // Document mode: Tax Invoice vs e-LR (Goods Consignment Note)
-  const [activeDocType, setActiveDocType] = useState<'dashboard' | 'invoice' | 'lr'>('dashboard');
+  // Active view in the sidebar navigation
+  const [activeView, setActiveView] = useState<ActiveView>('dashboard');
+  // Sidebar collapse
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  // Editing a client profile
+  const [editingClientForModal, setEditingClientForModal] = useState<CustomerRecord | null>(null);
+  const [showClientProfileModal, setShowClientProfileModal] = useState(false);
+  // Payment modal shortcut from header
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+
+  // Derive 'activeDocType' for existing editor components
+  const activeDocType: 'dashboard' | 'invoice' | 'lr' =
+    activeView === 'invoice' ? 'invoice'
+    : activeView === 'lr' ? 'lr'
+    : 'dashboard';
 
   // Current active invoice
   const [currentInvoice, setCurrentInvoice] = useState<InvoiceData>(() => {
@@ -93,8 +120,47 @@ export const App: React.FC = () => {
     customers, setCustomers,
     vehicles, setVehicles,
     tripSlips, setTripSlips,
+    payments, setPayments,
+    activeClient, setActiveClient,
     fetchInitialData, resetToDemo
   } = useStore();
+
+  // Handler: select a client (from search, directory, or clients page)
+  const handleSelectClient = (client: CustomerRecord) => {
+    setActiveClient(client);
+    setActiveView('client-dashboard');
+    showToast(`Active client set: ${client.name}`);
+  };
+
+  // Handler: clear active client
+  const handleClearClient = () => {
+    setActiveClient(null);
+    if (activeView === 'client-dashboard' || activeView === 'account') {
+      setActiveView('dashboard');
+    }
+  };
+
+  // Handler: view active client profile
+  const handleViewClientProfile = () => {
+    if (activeClient) {
+      setEditingClientForModal(activeClient);
+      setShowClientProfileModal(true);
+    }
+  };
+
+  // Handler: record a payment from the payment modal
+  const handleSavePayment = (paymentData: Omit<Payment, 'id' | 'createdAt'>) => {
+    const newPayment: Payment = {
+      ...paymentData,
+      id: createPaymentId(),
+      createdAt: new Date().toISOString(),
+    };
+    const updated = [newPayment, ...payments];
+    setPayments(updated);
+    savePayment(newPayment);
+    setShowPaymentModal(false);
+    showToast(`Payment of ₹${newPayment.amount} recorded!`);
+  };
 
   // UI modals & view states
   const [isSavedModalOpen, setIsSavedModalOpen] = useState(false);
@@ -145,7 +211,15 @@ export const App: React.FC = () => {
 
   // --- INVOICE ACTIONS ---
   const handleSaveInvoice = () => {
-    const updated = { ...currentInvoice, updatedAt: new Date().toISOString() };
+    let updated = { ...currentInvoice, updatedAt: new Date().toISOString() };
+    if (!updated.customerId) {
+      if (activeClient && activeClient.name?.toLowerCase().trim() === updated.clientName?.toLowerCase().trim()) {
+        updated.customerId = activeClient.id;
+      } else {
+        const found = customers.find(c => c.name?.toLowerCase().trim() === updated.clientName?.toLowerCase().trim());
+        if (found) updated.customerId = found.id;
+      }
+    }
     recordBillSequenceNumber(updated.billNo);
     const existingIndex = savedInvoices.findIndex((inv) => inv.id === updated.id);
 
@@ -163,7 +237,15 @@ export const App: React.FC = () => {
   };
 
   const handleSaveAndNextInvoice = () => {
-    const updated = { ...currentInvoice, updatedAt: new Date().toISOString() };
+    let updated = { ...currentInvoice, updatedAt: new Date().toISOString() };
+    if (!updated.customerId) {
+      if (activeClient && activeClient.name?.toLowerCase().trim() === updated.clientName?.toLowerCase().trim()) {
+        updated.customerId = activeClient.id;
+      } else {
+        const found = customers.find(c => c.name?.toLowerCase().trim() === updated.clientName?.toLowerCase().trim());
+        if (found) updated.customerId = found.id;
+      }
+    }
     recordBillSequenceNumber(updated.billNo);
 
     let updatedList = [...savedInvoices];
@@ -180,16 +262,13 @@ export const App: React.FC = () => {
     recordBillSequenceNumber(nextBillNo);
 
     const newInv = createNewInvoice(nextBillNo);
-    try {
-      const savedComp = localStorage.getItem(LOCAL_STORAGE_KEY_COMPANY);
-      if (savedComp) newInv.company = JSON.parse(savedComp);
-
-      const savedBank = localStorage.getItem(LOCAL_STORAGE_KEY_BANK);
-      if (savedBank) newInv.bank = JSON.parse(savedBank);
-    } catch (e) {}
-
-    if (currentInvoice.refDocType) {
-      newInv.refDocType = currentInvoice.refDocType;
+    newInv.company = { ...currentInvoice.company };
+    newInv.bank = { ...currentInvoice.bank };
+    if (activeClient) {
+      newInv.customerId = activeClient.id;
+      newInv.clientName = activeClient.name;
+      newInv.clientAddress = activeClient.billingAddress || activeClient.address || '';
+      newInv.clientPhone = activeClient.phone || '';
     }
 
     setCurrentInvoice(newInv);
@@ -213,13 +292,28 @@ export const App: React.FC = () => {
       newInv.refDocType = currentInvoice.refDocType;
     }
 
+    if (activeClient) {
+      newInv.customerId = activeClient.id;
+      newInv.clientName = activeClient.name;
+      newInv.clientAddress = activeClient.billingAddress || activeClient.address || '';
+      newInv.clientPhone = activeClient.phone || '';
+    }
+
     setCurrentInvoice(newInv);
-    showToast(`Created new Bill #${newBillNo}`);
+    showToast(`Created new Bill #${newBillNo}${activeClient ? ` for ${activeClient.name}` : ''}`);
   };
 
   // --- CONSIGNMENT NOTE (e-LR) ACTIONS ---
   const handleSaveLR = () => {
-    const updated = { ...currentConsignmentNote, updatedAt: new Date().toISOString() };
+    let updated = { ...currentConsignmentNote, updatedAt: new Date().toISOString() };
+    if (!updated.customerId) {
+      if (activeClient && (activeClient.name?.toLowerCase().trim() === updated.consignorName?.toLowerCase().trim() || activeClient.name?.toLowerCase().trim() === updated.consigneeName?.toLowerCase().trim())) {
+        updated.customerId = activeClient.id;
+      } else {
+        const found = customers.find(c => c.name?.toLowerCase().trim() === updated.consignorName?.toLowerCase().trim() || c.name?.toLowerCase().trim() === updated.consigneeName?.toLowerCase().trim());
+        if (found) updated.customerId = found.id;
+      }
+    }
     const existingIndex = consignmentNotes.findIndex((n) => n.id === updated.id);
 
     if (existingIndex >= 0) {
@@ -237,8 +331,20 @@ export const App: React.FC = () => {
 
   const handleNewLR = () => {
     const fresh = createNewConsignmentNote();
+    try {
+      const savedComp = localStorage.getItem(LOCAL_STORAGE_KEY_COMPANY);
+      if (savedComp) fresh.company = JSON.parse(savedComp);
+    } catch (e) {}
+
+    if (activeClient) {
+      fresh.customerId = activeClient.id;
+      fresh.consignorName = activeClient.name;
+      fresh.consignorAddress = activeClient.address || '';
+      fresh.consignorGst = activeClient.gstin || '';
+    }
+
     setCurrentConsignmentNote(fresh);
-    showToast(`Created new e-LR #${fresh.lrNo}`);
+    showToast(`Created new e-LR #${fresh.lrNo}${activeClient ? ` for ${activeClient.name}` : ''}`);
   };
 
   const handleDuplicateLR = (note: ConsignmentNote) => {
@@ -302,7 +408,7 @@ export const App: React.FC = () => {
     ];
 
     setCurrentInvoice(newInv);
-    setActiveDocType('invoice');
+    setActiveView('invoice');
     showToast(`Created Bill #${newBillNo} from LR #${lr.lrNo}`);
   };
 
@@ -350,7 +456,7 @@ export const App: React.FC = () => {
     };
 
     setCurrentInvoice(newInv);
-    setActiveDocType('invoice');
+    setActiveView('invoice');
     showToast(`Created Consolidated Bill with ${selectedNotes.length} LRs!`);
   };
 
@@ -657,110 +763,302 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="app-viewport">
-      {/* Top Application Header */}
-      <HeaderBar
-        activeDocType={activeDocType}
-        onDocTypeChange={setActiveDocType}
-        onNewInvoice={activeDocType === 'lr' ? handleNewLR : handleNewInvoice}
-        onSaveInvoice={activeDocType === 'lr' ? handleSaveLR : handleSaveInvoice}
-        onSaveAndNextInvoice={activeDocType === 'invoice' ? handleSaveAndNextInvoice : undefined}
-        onPrint={handlePrint}
-        onDownloadPDF={handleDownloadPDF}
-        onDownloadAllLRCopiesPDF={handleDownloadAllLRCopiesPDF}
-        onWhatsAppShare={handleWhatsAppShare}
-        onOpenSavedModal={() => {
-          if (activeDocType === 'lr') {
-            setIsSavedLRModalOpen(true);
-          } else {
-            setIsSavedModalOpen(true);
+    <div className="app-viewport app-viewport-sidebar">
+
+      {/* Left Sidebar Navigation */}
+      <SidebarNav
+        activeView={activeView}
+        onNavigate={(view) => {
+          // If navigating to account, ensure a client is selected
+          if (view === 'account' && !activeClient) {
+            showToast('Please select a client first!');
+            setActiveView('clients');
+            return;
+          }
+          setActiveView(view);
+          // Sync legacy activeDocType for editor
+          if (view === 'invoice') {
+            // handled via activeDocType derivation
           }
         }}
-        onOpenDirectoryModal={() => setIsDirectoryModalOpen(true)}
-        onOpenTripSlipModal={() => setIsTripSlipModalOpen(true)}
-        onOpenLedgerModal={() => setIsLedgerModalOpen(true)}
-        onOpenBackupModal={() => setIsBackupModalOpen(true)}
-        savedCount={savedInvoices.length}
-        savedLRCount={consignmentNotes.length}
-        zoom={zoom}
-        onZoomIn={() => setZoom((z) => Math.min(1.4, z + 0.08))}
-        onZoomOut={() => setZoom((z) => Math.max(0.5, z - 0.08))}
-        onZoomReset={() => setZoom(0.92)}
-        onLoadOriginalSample={handleLoadOriginalSample}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-        isDownloadingPDF={isDownloadingPDF}
+        isCollapsed={sidebarCollapsed}
+        onToggleCollapse={() => setSidebarCollapsed((c) => !c)}
+        onClearClient={handleClearClient}
       />
 
-      {/* Main Split Content */}
-      <main className="app-main-workspace">
-        {activeDocType === 'dashboard' ? (
-          <Dashboard />
-        ) : (
-          <>
-                {/* Left Form Editor */}
-                {viewMode !== 'preview' && (
-                  <aside className="editor-sidebar-container no-print">
-                    {activeDocType === 'lr' ? (
-                      <ConsignmentNoteEditor
-                        note={currentConsignmentNote}
-                        onChange={setCurrentConsignmentNote}
-                        customers={customers}
-                        vehicles={vehicles}
-                        onSaveAsDefaultProfile={handleSaveAsDefaultProfile}
-                        onConvertToInvoice={handleConvertLRToInvoice}
-                        onOpenDirectoryModal={() => setIsDirectoryModalOpen(true)}
+      {/* Right: Header + Content */}
+      <div className="app-right-panel">
+        {/* Top Application Header */}
+        <HeaderBar
+          activeView={activeView}
+          onNavigate={(view) => setActiveView(view)}
+          onNewInvoice={activeDocType === 'lr' ? handleNewLR : handleNewInvoice}
+          onSaveInvoice={activeDocType === 'lr' ? handleSaveLR : handleSaveInvoice}
+          onSaveAndNextInvoice={activeView === 'invoice' ? handleSaveAndNextInvoice : undefined}
+          onPrint={handlePrint}
+          onDownloadPDF={handleDownloadPDF}
+          onDownloadAllLRCopiesPDF={handleDownloadAllLRCopiesPDF}
+          onWhatsAppShare={handleWhatsAppShare}
+          onOpenSavedModal={() => {
+            if (activeView === 'lr') {
+              setIsSavedLRModalOpen(true);
+            } else {
+              setIsSavedModalOpen(true);
+            }
+          }}
+          onOpenDirectoryModal={() => setIsDirectoryModalOpen(true)}
+          onOpenTripSlipModal={() => setIsTripSlipModalOpen(true)}
+          onOpenLedgerModal={() => setIsLedgerModalOpen(true)}
+          onOpenBackupModal={() => setIsBackupModalOpen(true)}
+          savedCount={savedInvoices.length}
+          savedLRCount={consignmentNotes.length}
+          zoom={zoom}
+          onZoomIn={() => setZoom((z) => Math.min(1.4, z + 0.08))}
+          onZoomOut={() => setZoom((z) => Math.max(0.5, z - 0.08))}
+          onZoomReset={() => setZoom(0.92)}
+          onLoadOriginalSample={handleLoadOriginalSample}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          isDownloadingPDF={isDownloadingPDF}
+          onSelectClient={handleSelectClient}
+          onClearClient={handleClearClient}
+          onViewClientProfile={handleViewClientProfile}
+        />
+
+        {/* Main Content Area */}
+        <main className="app-main-workspace">
+
+          {/* DASHBOARD */}
+          {activeView === 'dashboard' && (
+            <Dashboard onSelectClient={handleSelectClient} onNavigate={setActiveView} />
+          )}
+
+          {/* CLIENTS LIST */}
+          {activeView === 'clients' && (
+            <ClientsListPage
+              onSelectClient={handleSelectClient}
+              onNavigate={setActiveView}
+            />
+          )}
+
+          {/* CLIENT DASHBOARD */}
+          {activeView === 'client-dashboard' && activeClient && (
+            <ClientDashboard
+              client={activeClient}
+              onNavigate={setActiveView}
+              onCreateInvoice={() => {
+                // Pre-fill invoice with active client
+                handleNewInvoice();
+                setCurrentInvoice((prev) => ({
+                  ...prev,
+                  clientName: activeClient.name,
+                  clientPhone: activeClient.phone || '',
+                  clientAddress: activeClient.billingAddress || activeClient.address || '',
+                  customerId: activeClient.id,
+                }));
+                setActiveView('invoice');
+              }}
+              onCreateLR={() => {
+                handleNewLR();
+                setCurrentConsignmentNote((prev) => ({
+                  ...prev,
+                  customerId: activeClient.id,
+                }));
+                setActiveView('lr');
+              }}
+              onRecordPayment={() => setShowPaymentModal(true)}
+              onEditClient={handleViewClientProfile}
+            />
+          )}
+
+          {/* ACCOUNT / LEDGER (client-scoped) */}
+          {activeView === 'account' && activeClient && (
+            <AccountPage
+              client={activeClient}
+              onNavigate={setActiveView}
+              onCreateInvoice={() => {
+                handleNewInvoice();
+                setCurrentInvoice((prev) => ({
+                  ...prev,
+                  clientName: activeClient.name,
+                  clientPhone: activeClient.phone || '',
+                  clientAddress: activeClient.billingAddress || activeClient.address || '',
+                  customerId: activeClient.id,
+                }));
+                setActiveView('invoice');
+              }}
+            />
+          )}
+
+          {/* INVOICE EDITOR */}
+          {activeView === 'invoice' && (
+            <>
+              {viewMode !== 'preview' && (
+                <aside className="editor-sidebar-container no-print">
+                  <InvoiceEditor
+                    invoice={currentInvoice}
+                    onChange={setCurrentInvoice}
+                    onSaveAsDefaultProfile={() => handleSaveAsDefaultProfile(currentInvoice.company)}
+                    customers={customers}
+                    vehicles={vehicles}
+                    savedInvoices={savedInvoices}
+                    onSaveAndNext={handleSaveAndNextInvoice}
+                    onQuickSaveCustomer={handleQuickSaveCustomer}
+                    onQuickSaveVehicle={handleQuickSaveVehicle}
+                    onOpenDirectoryModal={() => setIsDirectoryModalOpen(true)}
+                  />
+                </aside>
+              )}
+              {viewMode !== 'editor' && (
+                <section className="preview-pane-container">
+                  <div
+                    className="preview-scaler"
+                    style={{ transform: `scale(${zoom})`, transformOrigin: 'top center' }}
+                  >
+                    {currentInvoice.template === 'modern' ? (
+                      <ModernInvoiceDocument
+                        invoice={currentInvoice}
+                        isEditableInline={true}
+                        onUpdateField={handleDirectInvoiceFieldUpdate}
                       />
                     ) : (
-                      <InvoiceEditor
+                      <InvoiceDocument
                         invoice={currentInvoice}
-                        onChange={setCurrentInvoice}
-                        onSaveAsDefaultProfile={() => handleSaveAsDefaultProfile(currentInvoice.company)}
-                        customers={customers}
-                        vehicles={vehicles}
-                        savedInvoices={savedInvoices}
-                        onSaveAndNext={handleSaveAndNextInvoice}
-                        onQuickSaveCustomer={handleQuickSaveCustomer}
-                        onQuickSaveVehicle={handleQuickSaveVehicle}
-                        onOpenDirectoryModal={() => setIsDirectoryModalOpen(true)}
+                        isEditableInline={true}
+                        onUpdateField={handleDirectInvoiceFieldUpdate}
                       />
                     )}
-                  </aside>
-                )}
+                  </div>
+                </section>
+              )}
+            </>
+          )}
 
-                {/* Live A4 Document Preview */}
-                {viewMode !== 'editor' && (
-                  <section className="preview-pane-container">
-                    <div
-                      className="preview-scaler"
-                      style={{ transform: `scale(${zoom})`, transformOrigin: 'top center' }}
-                    >
-                      {activeDocType === 'lr' ? (
-                        <ConsignmentNoteDocument
-                          note={currentConsignmentNote}
-                          isEditableInline={true}
-                          onUpdateField={handleDirectLRFieldUpdate}
-                        />
-                      ) : currentInvoice.template === 'modern' ? (
-                        <ModernInvoiceDocument
-                          invoice={currentInvoice}
-                          isEditableInline={true}
-                          onUpdateField={handleDirectInvoiceFieldUpdate}
-                        />
-                      ) : (
-                        <InvoiceDocument
-                          invoice={currentInvoice}
-                          isEditableInline={true}
-                          onUpdateField={handleDirectInvoiceFieldUpdate}
-                        />
-                      )}
-                    </div>
-                  </section>
-                )}
+          {/* INVOICE LIST (global or client-filtered) */}
+          {activeView === 'invoice-list' && (
+            <div className="page-container">
+              <div className="page-header">
+                <div>
+                  <h1 className="page-title">
+                    {activeClient ? `Invoices — ${activeClient.name}` : 'All Invoices'}
+                  </h1>
+                </div>
+                <button className="btn-primary" onClick={() => {
+                  handleNewInvoice();
+                  setActiveView('invoice');
+                }}>
+                  + New Invoice
+                </button>
+              </div>
+              <button className="btn-ghost" onClick={() => setIsSavedModalOpen(true)}>Open Invoices Manager</button>
+            </div>
+          )}
 
-          </>
-        )}
-      </main>
+          {/* e-LR EDITOR */}
+          {activeView === 'lr' && (
+            <>
+              {viewMode !== 'preview' && (
+                <aside className="editor-sidebar-container no-print">
+                  <ConsignmentNoteEditor
+                    note={currentConsignmentNote}
+                    onChange={setCurrentConsignmentNote}
+                    customers={customers}
+                    vehicles={vehicles}
+                    onSaveAsDefaultProfile={handleSaveAsDefaultProfile}
+                    onConvertToInvoice={handleConvertLRToInvoice}
+                    onOpenDirectoryModal={() => setIsDirectoryModalOpen(true)}
+                  />
+                </aside>
+              )}
+              {viewMode !== 'editor' && (
+                <section className="preview-pane-container">
+                  <div
+                    className="preview-scaler"
+                    style={{ transform: `scale(${zoom})`, transformOrigin: 'top center' }}
+                  >
+                    <ConsignmentNoteDocument
+                      note={currentConsignmentNote}
+                      isEditableInline={true}
+                      onUpdateField={handleDirectLRFieldUpdate}
+                    />
+                  </div>
+                </section>
+              )}
+            </>
+          )}
+
+          {/* e-LR LIST */}
+          {activeView === 'lr-list' && (
+            <div className="page-container">
+              <div className="page-header">
+                <div>
+                  <h1 className="page-title">
+                    {activeClient ? `e-LR Records — ${activeClient.name}` : 'All e-LR Records'}
+                  </h1>
+                </div>
+                <button className="btn-primary" onClick={() => {
+                  handleNewLR();
+                  setActiveView('lr');
+                }}>
+                  + New e-LR
+                </button>
+              </div>
+              <button className="btn-ghost" onClick={() => setIsSavedLRModalOpen(true)}>Open LR Manager</button>
+            </div>
+          )}
+
+          {/* TRIPS */}
+          {activeView === 'trips' && (
+            <div className="page-container">
+              <div className="page-header">
+                <h1 className="page-title">Trip Slips</h1>
+              </div>
+              <button className="btn-primary" onClick={() => setIsTripSlipModalOpen(true)}>Open Trip Slips</button>
+            </div>
+          )}
+
+          {/* VEHICLES */}
+          {activeView === 'vehicles' && (
+            <div className="page-container">
+              <div className="page-header">
+                <h1 className="page-title">Vehicle Directory</h1>
+              </div>
+              <button className="btn-primary" onClick={() => setIsDirectoryModalOpen(true)}>Open Directory</button>
+            </div>
+          )}
+
+          {/* DOCUMENTS */}
+          {activeView === 'documents' && (
+            <DocumentsPage client={activeClient} />
+          )}
+
+          {/* REPORTS */}
+          {activeView === 'reports' && (
+            <ReportsPage onSelectClient={handleSelectClient} onNavigate={setActiveView} />
+          )}
+
+          {/* SETTINGS */}
+          {activeView === 'settings' && (
+            <div className="page-container">
+              <div className="page-header">
+                <h1 className="page-title">Settings</h1>
+              </div>
+              <button className="btn-ghost" onClick={() => setIsBackupModalOpen(true)}>Backup & Restore</button>
+            </div>
+          )}
+
+          {/* EXPENSES */}
+          {activeView === 'expenses' && (
+            <div className="page-container">
+              <div className="page-header">
+                <h1 className="page-title">Expenses</h1>
+                <p className="page-subtitle">Coming soon — track driver advances, fuel, and toll charges</p>
+              </div>
+            </div>
+          )}
+
+        </main>
+      </div>
 
       {/* Toast Notification */}
       {toastMessage && (
@@ -770,12 +1068,46 @@ export const App: React.FC = () => {
         </div>
       )}
 
+      {/* Client Profile Modal (edit from header bar) */}
+      {showClientProfileModal && editingClientForModal && (
+        <ClientProfileModal
+          client={editingClientForModal}
+          onSave={(updated) => {
+            const existing = customers.find((c) => c.id === updated.id);
+            const newList = existing
+              ? customers.map((c) => (c.id === updated.id ? updated : c))
+              : [updated, ...customers];
+            setCustomers(newList);
+            saveCustomerSvc(updated);
+            // If this was the active client, refresh it
+            if (activeClient?.id === updated.id) {
+              setActiveClient(updated);
+            }
+            setShowClientProfileModal(false);
+            showToast('Client updated!');
+          }}
+          onClose={() => setShowClientProfileModal(false)}
+        />
+      )}
+
+      {/* Payment Modal (from header active client bar) */}
+      {showPaymentModal && activeClient && (
+        <PaymentModal
+          client={activeClient}
+          onSave={handleSavePayment}
+          onClose={() => setShowPaymentModal(false)}
+        />
+      )}
+
       {/* Saved Invoices Modal */}
       <SavedInvoicesModal
         isOpen={isSavedModalOpen}
         onClose={() => setIsSavedModalOpen(false)}
         savedInvoices={savedInvoices}
-        onSelectInvoice={handleSelectInvoice}
+        onSelectInvoice={(inv) => {
+          handleSelectInvoice(inv);
+          setActiveView('invoice');
+        }}
         onDuplicateInvoice={handleDuplicateInvoice}
         onDeleteInvoice={handleDeleteInvoice}
         onExportAll={() => {
@@ -799,7 +1131,7 @@ export const App: React.FC = () => {
         savedNotes={consignmentNotes}
         onSelectNote={(n) => {
           setCurrentConsignmentNote(n);
-          setActiveDocType('lr');
+          setActiveView('lr');
           showToast(`Loaded e-LR #${n.lrNo}`);
         }}
         onDuplicateNote={handleDuplicateLR}
@@ -821,7 +1153,11 @@ export const App: React.FC = () => {
         onAddVehicle={handleAddVehicle}
         onUpdateVehicle={handleUpdateVehicle}
         onDeleteVehicle={handleDeleteVehicle}
-        onSelectCustomer={handleSelectCustomerFromDir}
+        onSelectCustomer={(cust) => {
+          handleSelectCustomerFromDir(cust);
+          // Also set as active client
+          setActiveClient(cust);
+        }}
       />
 
       {/* Trip Slip Modal */}
@@ -844,7 +1180,7 @@ export const App: React.FC = () => {
         onUpdatePayment={handleUpdateInvoicePayment}
         onSelectInvoice={(inv) => {
           handleSelectInvoice(inv);
-          setActiveDocType('invoice');
+          setActiveView('invoice');
         }}
       />
 
