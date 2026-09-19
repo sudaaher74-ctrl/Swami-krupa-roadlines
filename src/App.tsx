@@ -512,19 +512,95 @@ export const App: React.FC = () => {
 
   // --- UNIFIED EXPORT & PRINT ACTIONS ---
   const handlePrint = () => {
+    if (activeDocType === 'invoice') {
+      handleSaveInvoice();
+    } else {
+      handleSaveLR();
+    }
     window.print();
   };
 
   const handleDownloadPDF = async () => {
     try {
       setIsDownloadingPDF(true);
-      showToast(`Generating high-res ${activeDocType === 'lr' ? 'e-LR' : 'Bill'} PDF...`);
+      showToast(`Saving & generating ${activeDocType === 'lr' ? 'e-LR' : 'Bill'} PDF...`);
       if (activeDocType === 'lr') {
-        await downloadConsignmentNotePDF(currentConsignmentNote);
-        showToast('e-LR PDF downloaded successfully!');
+        let updated = { ...currentConsignmentNote, updatedAt: new Date().toISOString() };
+        if (!updated.customerId) {
+          if (activeClient && (activeClient.name?.toLowerCase().trim() === updated.consignorName?.toLowerCase().trim() || activeClient.name?.toLowerCase().trim() === updated.consigneeName?.toLowerCase().trim())) {
+            updated.customerId = activeClient.id;
+          } else {
+            const found = customers.find(c => c.name?.toLowerCase().trim() === updated.consignorName?.toLowerCase().trim() || c.name?.toLowerCase().trim() === updated.consigneeName?.toLowerCase().trim());
+            if (found) updated.customerId = found.id;
+          }
+        }
+        const existingIndex = consignmentNotes.findIndex((n) => n.id === updated.id);
+        let updatedLRList = [...consignmentNotes];
+        if (existingIndex >= 0) {
+          updatedLRList[existingIndex] = updated;
+        } else {
+          updatedLRList = [updated, ...consignmentNotes];
+        }
+        setConsignmentNotes(updatedLRList);
+        saveConsignmentNote(updated);
+
+        await downloadConsignmentNotePDF(updated);
+        showToast(`Saved & downloaded e-LR #${updated.lrNo}!`);
       } else {
-        await downloadInvoicePDF(currentInvoice);
-        showToast('Invoice PDF downloaded successfully!');
+        // 1. Auto-save current invoice
+        let updated = { ...currentInvoice, updatedAt: new Date().toISOString() };
+        if (!updated.customerId) {
+          if (activeClient && activeClient.name?.toLowerCase().trim() === updated.clientName?.toLowerCase().trim()) {
+            updated.customerId = activeClient.id;
+          } else {
+            const found = customers.find(c => c.name?.toLowerCase().trim() === updated.clientName?.toLowerCase().trim());
+            if (found) updated.customerId = found.id;
+          }
+        }
+        recordBillSequenceNumber(updated.billNo);
+
+        let updatedList = [...savedInvoices];
+        const existingIndex = savedInvoices.findIndex((inv) => inv.id === updated.id);
+        if (existingIndex >= 0) {
+          updatedList[existingIndex] = updated;
+        } else {
+          updatedList = [updated, ...savedInvoices];
+        }
+        setSavedInvoices(updatedList);
+        saveInvoice(updated);
+
+        // 2. Download PDF
+        await downloadInvoicePDF(updated);
+
+        // 3. Auto-advance to next bill with next number without clicking next
+        const nextBillNo = calculateNextBillNumber(updatedList, updated);
+        recordBillSequenceNumber(nextBillNo);
+
+        const newInv = createNewInvoice(nextBillNo);
+        newInv.company = { ...updated.company };
+        newInv.bank = { ...updated.bank };
+        newInv.template = updated.template;
+        if (updated.refDocType) {
+          newInv.refDocType = updated.refDocType;
+        }
+        if (updated.customGstPayableBy) {
+          newInv.customGstPayableBy = updated.customGstPayableBy;
+        }
+
+        if (activeClient) {
+          newInv.customerId = activeClient.id;
+          newInv.clientName = activeClient.name;
+          newInv.clientAddress = activeClient.billingAddress || activeClient.address || '';
+          newInv.clientPhone = activeClient.phone || '';
+        } else if (updated.clientName) {
+          newInv.customerId = updated.customerId;
+          newInv.clientName = updated.clientName;
+          newInv.clientAddress = updated.clientAddress || '';
+          newInv.clientPhone = updated.clientPhone || '';
+        }
+
+        setCurrentInvoice(newInv);
+        showToast(`Saved Bill #${updated.billNo} & downloaded PDF! Created next Bill #${nextBillNo}`);
       }
     } catch (err) {
       console.error(err);
@@ -909,7 +985,7 @@ export const App: React.FC = () => {
                   />
                 </aside>
               )}
-              {viewMode !== 'editor' && (
+              {viewMode !== 'editor' ? (
                 <section className="preview-pane-container">
                   <div
                     className="preview-scaler"
@@ -930,6 +1006,20 @@ export const App: React.FC = () => {
                     )}
                   </div>
                 </section>
+              ) : (
+                <div style={{ position: 'fixed', left: '-9999px', top: 0, width: '794px', pointerEvents: 'none', opacity: 0 }} aria-hidden="true">
+                  {currentInvoice.template === 'modern' ? (
+                    <ModernInvoiceDocument
+                      invoice={currentInvoice}
+                      isEditableInline={false}
+                    />
+                  ) : (
+                    <InvoiceDocument
+                      invoice={currentInvoice}
+                      isEditableInline={false}
+                    />
+                  )}
+                </div>
               )}
             </>
           )}
@@ -970,7 +1060,7 @@ export const App: React.FC = () => {
                   />
                 </aside>
               )}
-              {viewMode !== 'editor' && (
+              {viewMode !== 'editor' ? (
                 <section className="preview-pane-container">
                   <div
                     className="preview-scaler"
@@ -983,6 +1073,13 @@ export const App: React.FC = () => {
                     />
                   </div>
                 </section>
+              ) : (
+                <div style={{ position: 'fixed', left: '-9999px', top: 0, width: '794px', pointerEvents: 'none', opacity: 0 }} aria-hidden="true">
+                  <ConsignmentNoteDocument
+                    note={currentConsignmentNote}
+                    isEditableInline={false}
+                  />
+                </div>
               )}
             </>
           )}
