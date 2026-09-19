@@ -52,6 +52,8 @@ export interface InvoiceData {
   customGstPayableBy?: string;
   paymentStatus?: 'PAID' | 'UNPAID' | 'PARTIAL';
   amountReceived?: number;
+  tdsDeducted?: number;
+  freightDeduction?: number;
   paymentDate?: string;
   paymentMode?: 'BANK_TRANSFER' | 'UPI' | 'CHEQUE' | 'CASH' | 'OTHER' | string;
   paymentNotes?: string;
@@ -190,12 +192,26 @@ export interface ConsignmentNote {
 // ACCOUNTING TYPES — New for v2
 // ============================================================
 
+export interface PaymentAllocation {
+  invoiceId: string;
+  amount: number;             // net bank received allocated to this invoice
+  tdsAmount?: number;         // TDS allocated
+  deductionAmount?: number;   // discount/penalty allocated
+  billNo?: string;
+}
+
 export interface Payment {
   id: string;
   customerId: string;
-  invoiceId?: string;           // optional: link to specific invoice
+  invoiceId?: string;           // optional: link to single invoice
   paymentDate: string;          // e.g. "25-09-2026"
-  amount: number;
+  amount: number;               // net amount received in bank / cash
+  tdsAmount?: number;           // TDS deducted under Sec 194C
+  tdsPercent?: number;          // 1, 2, or custom
+  deductionAmount?: number;     // shortages, penalties, discount
+  deductionReason?: string;     // e.g. "Detention dispute", "Weight shortage"
+  totalSettled?: number;        // amount + (tdsAmount || 0) + (deductionAmount || 0)
+  allocations?: PaymentAllocation[]; // multi-invoice allocations
   paymentMode: 'BANK_TRANSFER' | 'UPI' | 'CHEQUE' | 'CASH' | 'OTHER';
   referenceNumber?: string;     // cheque number, UTR, etc.
   notes?: string;

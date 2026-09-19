@@ -91,11 +91,21 @@ export function getCustomerSummary(
   }, 0);
 
   // Sum of standalone payment records
-  const paymentsTotal = custPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+  const paymentsTotal = custPayments.reduce((sum, p) => {
+    const settled = (p.totalSettled && p.totalSettled > 0)
+      ? p.totalSettled
+      : (p.amount || 0) + (p.tdsAmount || 0) + (p.deductionAmount || 0);
+    return sum + settled;
+  }, 0);
 
   // Also count amountReceived recorded inline on invoices (for backwards compat)
   // Only count invoice.amountReceived if there's no matching standalone payment for that invoice
-  const invoicesWithStandalonePayments = new Set(custPayments.map((p) => p.invoiceId).filter(Boolean));
+  const invoicesWithStandalonePayments = new Set(
+    custPayments.flatMap((p) => [
+      p.invoiceId,
+      ...(p.allocations ? p.allocations.map((a) => a.invoiceId) : [])
+    ]).filter(Boolean)
+  );
   const inlineReceived = custInvoices.reduce((sum, inv) => {
     if (!invoicesWithStandalonePayments.has(inv.id)) {
       return sum + (inv.amountReceived || 0);
@@ -194,6 +204,30 @@ export function getCustomerLedger(
   // Build ledger from standalone payments
   custPayments.forEach((pay) => {
     if (!existingLedger.find((e) => e.paymentId === pay.id && e.transactionType === 'PAYMENT')) {
+      const settled = (pay.totalSettled && pay.totalSettled > 0)
+        ? pay.totalSettled
+        : (pay.amount || 0) + (pay.tdsAmount || 0) + (pay.deductionAmount || 0);
+
+      let desc = 'Payment Received';
+      if (pay.allocations && pay.allocations.length > 0) {
+        const bills = pay.allocations.map((a) => a.billNo || a.invoiceId.slice(-6)).join(', ');
+        desc += ` (Against Bills: ${bills})`;
+      } else if (pay.invoiceId) {
+        const matched = custInvoices.find((i) => i.id === pay.invoiceId);
+        desc += ` (Against Bill #${matched ? matched.billNo : pay.invoiceId.slice(-6)})`;
+      }
+
+      const notesParts: string[] = [];
+      if (pay.tdsAmount && pay.tdsAmount > 0) {
+        notesParts.push(`TDS: ₹${pay.tdsAmount.toLocaleString('en-IN')}${pay.tdsPercent ? ` (${pay.tdsPercent}%)` : ''}`);
+      }
+      if (pay.deductionAmount && pay.deductionAmount > 0) {
+        notesParts.push(`Ded: ₹${pay.deductionAmount.toLocaleString('en-IN')}${pay.deductionReason ? ` (${pay.deductionReason})` : ''}`);
+      }
+      if (notesParts.length > 0) {
+        desc += ` [Bank: ₹${pay.amount.toLocaleString('en-IN')}, ${notesParts.join(', ')}]`;
+      }
+
       entries.push({
         id: `pay-ledger-${pay.id}`,
         customerId,
@@ -202,16 +236,22 @@ export function getCustomerLedger(
         transactionDate: pay.paymentDate,
         transactionType: 'PAYMENT' as LedgerTransactionType,
         referenceNumber: pay.referenceNumber || `PAY-${pay.id.slice(-4).toUpperCase()}`,
-        description: `Payment Received${pay.invoiceId ? ` (Against #${pay.invoiceId.slice(-6)})` : ''}`,
+        description: desc,
         debit: 0,
-        credit: pay.amount,
+        credit: settled,
         createdAt: pay.createdAt,
       });
     }
   });
 
   // Also add inline payments on invoices (backwards compat)
-  const invoicesWithStandalonePayments = new Set(custPayments.map((p) => p.invoiceId).filter(Boolean));
+  const invoicesWithStandalonePayments = new Set(
+    custPayments.flatMap((p) => [
+      p.invoiceId,
+      ...(p.allocations ? p.allocations.map((a) => a.invoiceId) : [])
+    ]).filter(Boolean)
+  );
+
   custInvoices.forEach((inv) => {
     if (inv.amountReceived && inv.amountReceived > 0 && !invoicesWithStandalonePayments.has(inv.id)) {
       entries.push({
@@ -243,6 +283,86 @@ export function getCustomerLedger(
     balance = balance + entry.debit - entry.credit;
     return { ...entry, runningBalance: balance };
   });
+}
+
+export interface FilteredLedgerResult {
+  openingBalance: number;
+  openingBalanceType: 'Dr' | 'Cr';
+  entries: Array<LedgerTransaction & { runningBalance: number }>;
+  totalPeriodDebit: number;
+  totalPeriodCredit: number;
+  closingBalance: number;
+  closingBalanceType: 'Dr' | 'Cr';
+}
+
+/**
+ * Returns date-filtered customer ledger with accurate period opening and closing balance.
+ */
+export function getFilteredCustomerLedger(
+  customerId: string,
+  customer: CustomerRecord | undefined,
+  invoices: InvoiceData[],
+  payments: Payment[],
+  existingLedger: LedgerTransaction[],
+  startDate?: string,
+  endDate?: string
+): FilteredLedgerResult {
+  const allEntries = getCustomerLedger(customerId, customer, invoices, payments, existingLedger);
+
+  if (!startDate && !endDate) {
+    const totalDebit = allEntries.reduce((s, e) => s + e.debit, 0);
+    const totalCredit = allEntries.reduce((s, e) => s + e.credit, 0);
+    const closing = totalDebit - totalCredit;
+    return {
+      openingBalance: 0,
+      openingBalanceType: 'Dr',
+      entries: allEntries,
+      totalPeriodDebit: totalDebit,
+      totalPeriodCredit: totalCredit,
+      closingBalance: Math.abs(closing),
+      closingBalanceType: closing >= 0 ? 'Dr' : 'Cr',
+    };
+  }
+
+  const startD = startDate ? parseDate(startDate) : null;
+  const endD = endDate ? parseDate(endDate) : null;
+  if (endD) endD.setHours(23, 59, 59, 999);
+
+  let prePeriodBalance = 0;
+  const periodEntries: LedgerTransaction[] = [];
+
+  allEntries.forEach((entry) => {
+    const d = parseDate(entry.transactionDate);
+    if (!d) {
+      periodEntries.push(entry);
+      return;
+    }
+    if (startD && d < startD) {
+      prePeriodBalance += (entry.debit - entry.credit);
+    } else if (!endD || d <= endD) {
+      periodEntries.push(entry);
+    }
+  });
+
+  let running = prePeriodBalance;
+  const mapped = periodEntries.map((e) => {
+    running += (e.debit - e.credit);
+    return { ...e, runningBalance: running };
+  });
+
+  const totalPeriodDebit = periodEntries.reduce((s, e) => s + e.debit, 0);
+  const totalPeriodCredit = periodEntries.reduce((s, e) => s + e.credit, 0);
+  const finalBalance = prePeriodBalance + totalPeriodDebit - totalPeriodCredit;
+
+  return {
+    openingBalance: Math.abs(prePeriodBalance),
+    openingBalanceType: prePeriodBalance >= 0 ? 'Dr' : 'Cr',
+    entries: mapped,
+    totalPeriodDebit,
+    totalPeriodCredit,
+    closingBalance: Math.abs(finalBalance),
+    closingBalanceType: finalBalance >= 0 ? 'Dr' : 'Cr',
+  };
 }
 
 /**
@@ -280,10 +400,21 @@ export function getOutstandingAging(
     const invOutstanding = Math.max(0, totals.balanceAmount - received);
     if (invOutstanding === 0) return;
 
-    // Also subtract standalone payments linked to this invoice
-    const invoicePayments = payments.filter((p) => p.customerId === customerId && p.invoiceId === inv.id);
-    const standaloneReceived = invoicePayments.reduce((s, p) => s + p.amount, 0);
-    const adjustedOutstanding = Math.max(0, invOutstanding - standaloneReceived);
+    // Also subtract standalone payments linked to this invoice (including allocations, TDS, and deductions)
+    const invoicePayments = payments.filter((p) => {
+      if (p.customerId !== customerId) return false;
+      if (p.invoiceId === inv.id) return true;
+      if (p.allocations && p.allocations.some((a) => a.invoiceId === inv.id)) return true;
+      return false;
+    });
+    const standaloneReceived = invoicePayments.reduce((s, p) => {
+      if (p.allocations) {
+        const a = p.allocations.find((al) => al.invoiceId === inv.id);
+        if (a) return s + (a.amount || 0) + (a.tdsAmount || 0) + (a.deductionAmount || 0);
+      }
+      return s + (p.totalSettled && p.totalSettled > 0 ? p.totalSettled : (p.amount || 0) + (p.tdsAmount || 0) + (p.deductionAmount || 0));
+    }, 0);
+    const adjustedOutstanding = Math.max(0, totals.balanceAmount - Math.max(received, standaloneReceived));
     if (adjustedOutstanding === 0) return;
 
     const daysOverdue = getDaysOverdue(inv.date, `${termDays} days`);

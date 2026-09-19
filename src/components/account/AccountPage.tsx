@@ -8,7 +8,7 @@ import { PaymentsTab } from './PaymentsTab';
 import { OutstandingTab } from './OutstandingTab';
 import { PaymentModal } from './PaymentModal';
 import { ClientInvoiceList } from '../billing/ClientInvoiceList';
-import { savePayment } from '../../utils/supabaseService';
+import { savePayment, saveInvoice } from '../../utils/supabaseService';
 import { createPaymentId } from '../../utils/accountingService';
 
 type AccountTab = 'overview' | 'ledger' | 'invoices' | 'payments' | 'outstanding';
@@ -37,20 +37,49 @@ export const AccountPage: React.FC<AccountPageProps> = ({ client, onNavigate: _o
     setPayments(updated);
     savePayment(newPayment);
 
-    // Also update invoice amountReceived if linked to specific invoice
-    if (paymentData.invoiceId) {
-      const updatedInvoices = savedInvoices.map((inv) => {
+    // Also update invoice records if linked or allocated
+    let updatedInvoices = [...savedInvoices];
+
+    if (paymentData.allocations && paymentData.allocations.length > 0) {
+      const allocMap = new Map(paymentData.allocations.map((a) => [a.invoiceId, a]));
+      updatedInvoices = updatedInvoices.map((inv) => {
+        const alloc = allocMap.get(inv.id);
+        if (!alloc) return inv;
+        const currentReceived = inv.amountReceived || 0;
+        const settledDelta = (alloc.amount || 0) + (alloc.tdsAmount || 0) + (alloc.deductionAmount || 0);
+        const newReceived = currentReceived + settledDelta;
+        const billTotal = (inv.items?.reduce((s, i) => s + (Number(i.amount) || 0), 0) || 0) - (inv.advanceDeduction || 0);
+        const updatedInv = {
+          ...inv,
+          amountReceived: newReceived,
+          tdsDeducted: (inv.tdsDeducted || 0) + (alloc.tdsAmount || 0),
+          freightDeduction: (inv.freightDeduction || 0) + (alloc.deductionAmount || 0),
+          paymentStatus: (newReceived >= billTotal ? 'PAID' : 'PARTIAL') as 'PAID' | 'PARTIAL',
+          updatedAt: new Date().toISOString(),
+        };
+        saveInvoice(updatedInv);
+        return updatedInv;
+      });
+      setSavedInvoices(updatedInvoices);
+    } else if (paymentData.invoiceId) {
+      updatedInvoices = updatedInvoices.map((inv) => {
         if (inv.id === paymentData.invoiceId) {
           const currentReceived = inv.amountReceived || 0;
-          const newReceived = currentReceived + paymentData.amount;
-          return {
+          const settledDelta = (paymentData.totalSettled && paymentData.totalSettled > 0)
+            ? paymentData.totalSettled
+            : (paymentData.amount || 0) + (paymentData.tdsAmount || 0) + (paymentData.deductionAmount || 0);
+          const newReceived = currentReceived + settledDelta;
+          const billTotal = (inv.items?.reduce((s, i) => s + (Number(i.amount) || 0), 0) || 0) - (inv.advanceDeduction || 0);
+          const updatedInv = {
             ...inv,
             amountReceived: newReceived,
-            paymentStatus: (newReceived >= (inv.items?.reduce((s, i) => s + (Number(i.amount) || 0), 0) - (inv.advanceDeduction || 0)))
-              ? 'PAID' as const
-              : 'PARTIAL' as const,
+            tdsDeducted: (inv.tdsDeducted || 0) + (paymentData.tdsAmount || 0),
+            freightDeduction: (inv.freightDeduction || 0) + (paymentData.deductionAmount || 0),
+            paymentStatus: (newReceived >= billTotal ? 'PAID' : 'PARTIAL') as 'PAID' | 'PARTIAL',
             updatedAt: new Date().toISOString(),
           };
+          saveInvoice(updatedInv);
+          return updatedInv;
         }
         return inv;
       });
